@@ -1,48 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- tvOS home tile: big landscape card with icon left, name right -->
+<!-- Real tvOS home tile: big rounded-square icon, app name centered below -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="112dp"
-    android:orientation="horizontal"
-    android:gravity="center_vertical"
-    android:paddingLeft="24dp"
-    android:paddingRight="24dp"
-    android:paddingTop="20dp"
-    android:paddingBottom="20dp"
-    android:background="@drawable/tile_background">
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp">
 
+    <!-- Rounded-square icon frame, like a tvOS app icon -->
     <FrameLayout
-        android:layout_width="76dp"
-        android:layout_height="76dp">
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:background="@drawable/tile_background">
 
         <ImageView
             android:id="@+id/tileIcon"
-            android:layout_width="76dp"
-            android:layout_height="76dp"
+            android:layout_width="116dp"
+            android:layout_height="116dp"
+            android:layout_gravity="center"
             android:scaleType="fitCenter"
             android:contentDescription="@null" />
 
         <!-- Emoji icon slot (used by the Settings gear tile) -->
         <TextView
             android:id="@+id/tileEmoji"
-            android:layout_width="76dp"
-            android:layout_height="76dp"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
             android:gravity="center"
-            android:textSize="48sp"
+            android:textSize="64sp"
             android:visibility="gone" />
     </FrameLayout>
 
+    <!-- App name under the icon, tvOS style -->
     <TextView
         android:id="@+id/tileLabel"
-        android:layout_width="0dp"
+        android:layout_width="190dp"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_marginLeft="24dp"
+        android:layout_marginTop="14dp"
+        android:gravity="center"
         android:ellipsize="end"
-        android:maxLines="2"
+        android:maxLines="1"
         android:fontFamily="sans-serif-light"
         android:textColor="#FFFFFF"
-        android:textSize="22sp" />
+        android:textSize="20sp" />
 
 </LinearLayout>
