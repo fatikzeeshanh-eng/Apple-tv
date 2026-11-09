@@ -18,7 +18,6 @@ import android.renderscript.ScriptIntrinsicBlur;
 import android.text.format.DateFormat;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
@@ -36,9 +35,10 @@ import java.util.List;
 
 public class MainActivity extends Activity {
 
-    private static final long CLOCK_TICK_MS = 30000L; // 30s
-    private static final long DIM_AFTER_MS = 60000L;   // 1 min idle -> dim
-    private static final long CLOCK_SAVE_AFTER_MS = 300000L; // 5 min idle -> clock screensaver
+    private static final long CLOCK_TICK_MS = 30000L;        // 30 s
+    private static final long IDLE_CHECK_MS = 5000L;         // 5 s poll
+    private static final long DIM_AFTER_MS = 60000L;         // 1 min idle -> dim
+    private static final long CLOCK_SAVER_AFTER_MS = 300000L; // 5 min idle -> screensaver
 
     private GridView appGridView;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
@@ -54,7 +54,8 @@ public class MainActivity extends Activity {
     private RenderScript renderScript;
     private Handler handler;
     private long lastInteractionTime;
-    private boolean dimmed;
+    private boolean dimmed = false;
+    private boolean screensaver = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,28 +91,30 @@ public class MainActivity extends Activity {
         buildShelf();
         setupTabs();
         startClock();
-        startIdleWatcher();
+        handler.postDelayed(idleCheck, IDLE_CHECK_MS);
     }
 
     // ---------- Hero backdrop (blurred featured icon, tvOS style) ----------
 
     private void showHeroBackdrop(AppInfo app) {
-        if (app == null || app.icon == null) return;
+        if (app == null || app.icon == null) {
+            return;
+        }
         try {
-            Bitmap src = drawableToBitmap(app.icon);
-            Bitmap blurred = blurBitmap(src, 25f);
+            Bitmap blurred = blurBitmap(drawableToBitmap(app.icon), 25f);
             heroBackdrop.setImageBitmap(blurred);
-            heroTitle.setText(app.label);
         } catch (Throwable t) {
             heroBackdrop.setImageDrawable(app.icon);
-            heroTitle.setText(app.label);
         }
+        heroTitle.setText(app.label);
     }
 
     private Bitmap drawableToBitmap(Drawable d) {
         if (d instanceof BitmapDrawable) {
             Bitmap bm = ((BitmapDrawable) d).getBitmap();
-            if (bm != null) return bm;
+            if (bm != null) {
+                return bm;
+            }
         }
         int w = Math.max(2, d.getIntrinsicWidth());
         int h = Math.max(2, d.getIntrinsicHeight());
@@ -141,50 +144,58 @@ public class MainActivity extends Activity {
         handler.postDelayed(clockTick, CLOCK_TICK_MS);
     }
 
-    private Runnable clockTick = new Runnable() {
+    private final Runnable clockTick = new Runnable() {
         @Override
         public void run() {
-            topClock.setText(DateFormat.getTimeFormat(this) == null ? null
-                    : android.text.format.DateFormat.getTimeFormat(MainActivity.this).format(new Date()));
+            topClock.setText(DateFormat.getTimeFormat(MainActivity.this).format(new Date()));
             handler.postDelayed(this, CLOCK_TICK_MS);
         }
     };
 
     // ---------- Idle dim + clock screensaver (Apple TV standby) ----------
 
-    private void startIdleWatcher() {
-        handler.postDelayed(idleCheck, 5000);
-    }
-
-    private Runnable idleCheck = new Runnable() {
+    private final Runnable idleCheck = new Runnable() {
         @Override
         public void run() {
             long idle = System.currentTimeMillis() - lastInteractionTime;
-            if (!dimmed && idle >= DIM_AFTER_MS) {
+
+            if (!screensaver && idle >= CLOCK_SAVER_AFTER_MS) {
+                screensaver = true;
+                enterScreensaver();
+            } else if (!dimmed && idle >= DIM_AFTER_MS) {
                 dimmed = true;
-                View root = getWindow().getDecorView();
-                root.animate() != null ? root.animate().alpha(0.15f) : null;
+                getWindow().getDecorView().animate().alpha(0.25f);
             }
-            if (idle >= CLOCK_SAVE_AFTER_MS) {
-                getWindow().getDecorView().setAlpha(0.15f);
-                topClock.setTextSize(72);
-                topClock.setTextColor(0xFFFFFFFF);
-                // Full clock screensaver mode: giant time, dim UI
-            }
-            handler.postDelayed(this, 5000);
+
+            handler.postDelayed(this, IDLE_CHECK_MS);
         }
     };
+
+    private void enterScreensaver() {
+        // Giant clock screensaver: dim everything, show huge time top-right
+        getWindow().getDecorView().setAlpha(0.10f);
+        topClock.setTextSize(72);
+        topClock.setTextColor(0xFFFFFFFF);
+        topClock.setText(DateFormat.getTimeFormat(this).format(new Date()));
+        handler.removeCallbacks(clockTick);
+        handler.postDelayed(clockTick, 1000L);
+    }
 
     @Override
     public void onUserInteraction() {
         super.onUserInteraction();
         lastInteractionTime = System.currentTimeMillis();
-        if (dimmed) {
-            dimmed = false;
-            View root = getWindow().getDecorView();
-            root.animate().alpha(1f);
+
+        if (screensaver) {
+            screensaver = false;
             topClock.setTextSize(16);
             topClock.setTextColor(0xAAFFFFFF);
+            handler.removeCallbacks(clockTick);
+            handler.postDelayed(clockTick, CLOCK_TICK_MS);
+        }
+        if (dimmed || getWindow().getDecorView().getAlpha() < 1f) {
+            dimmed = false;
+            getWindow().getDecorView().animate().alpha(1f);
         }
     }
 
@@ -278,7 +289,7 @@ public class MainActivity extends Activity {
         }
 
         // Initial backdrop from first featured app
-        if (appList.size() > 0) {
+        if (!appList.isEmpty()) {
             showHeroBackdrop(appList.get(0));
         }
     }
