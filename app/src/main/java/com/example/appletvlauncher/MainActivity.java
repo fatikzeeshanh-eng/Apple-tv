@@ -51,6 +51,7 @@ public class MainActivity extends Activity {
 
     private GridView appGridView;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
+    private List<AppInfo> allApps = new ArrayList<AppInfo>();
     private PackageManager packageManager;
 
     private TextView headerClock;
@@ -67,10 +68,10 @@ public class MainActivity extends Activity {
     private View inputButton;
     private View ccButton;
     private View appsButton;
+    private View addAppsButton;
 
     private boolean ccOpen = false;
     private int aerialIndex = 0;
-    private int selectedPosition = 0;
 
     private final Handler handler = new Handler();
     private final Runnable dimRunnable = new Runnable() {
@@ -122,9 +123,11 @@ public class MainActivity extends Activity {
         inputButton = findViewById(R.id.inputButton);
         ccButton = findViewById(R.id.ccButton);
         appsButton = findViewById(R.id.appsButton);
+        addAppsButton = findViewById(R.id.addAppsButton);
 
         performAutoDebloat();
         loadInstalledApps();
+        applyHiddenFilter();
 
         appGridView.setAdapter(new TileAdapter());
         appGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -136,7 +139,6 @@ public class MainActivity extends Activity {
         appGridView.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                selectedPosition = position;
                 animateTileFocus(view);
                 updateBackdrop(appList.get(position));
             }
@@ -183,7 +185,7 @@ public class MainActivity extends Activity {
         resetStandby();
     }
 
-    // ---------- Header buttons: Apps + Input + Control Center ----------
+    // ---------- Header buttons: Apps + Add Apps + Input + Control Center ----------
 
     private void setupHeaderButtons() {
         // Apps button opens a quick picker of every installed app
@@ -191,6 +193,14 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 showAppPicker();
+            }
+        });
+
+        // Add Apps button opens the home screen customization checklist
+        addAppsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showAddAppsDialog();
             }
         });
 
@@ -231,6 +241,56 @@ public class MainActivity extends Activity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    // Add Apps: tick apps to show on Home Screen, untick to remove, Done saves
+    private void showAddAppsDialog() {
+        if (allApps.isEmpty()) {
+            Toast.makeText(this, R.string.no_apps, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final String[] names = new String[allApps.size()];
+        final boolean[] checked = new boolean[allApps.size()];
+        java.util.Set<String> hidden = LauncherPreferences.getHiddenPackages(this);
+        for (int i = 0; i < allApps.size(); i++) {
+            names[i] = allApps.get(i).label;
+            // Checked = currently shown on the home screen
+            checked[i] = !hidden.contains(allApps.get(i).packageName);
+        }
+
+        new android.app.AlertDialog.Builder(this)
+                .setTitle(R.string.add_apps_title)
+                .setMultiChoiceItems(names, checked, new android.content.DialogInterface.OnMultiChoiceClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface dialog, int which, boolean isChecked) {
+                        LauncherPreferences.setHidden(MainActivity.this,
+                                allApps.get(which).packageName, !isChecked);
+                    }
+                })
+                .setPositiveButton(R.string.add_apps_done, new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface dialog, int which) {
+                        rebuildGrid();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    // Rebuild the visible grid from the saved choices
+    private void rebuildGrid() {
+        applyHiddenFilter();
+        ((BaseAdapter) appGridView.getAdapter()).notifyDataSetChanged();
+        appGridView.smoothScrollToPosition(0);
+        appGridView.post(new Runnable() {
+            @Override
+            public void run() {
+                if (appGridView.getChildCount() > 0) {
+                    appGridView.getChildAt(0).requestFocus();
+                }
+            }
+        });
+        Toast.makeText(this, "Home Screen updated", Toast.LENGTH_SHORT).show();
     }
 
     private void showInputPicker() {
@@ -438,35 +498,8 @@ public class MainActivity extends Activity {
                 closeControlCenter();
                 return true;
             }
-            // tvOS-style: pressing DOWN on the last grid row opens the all-apps list
-            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN
-                    && appGridView.hasFocus()
-                    && !appList.isEmpty()
-                    && isInLastRow(selectedPosition)) {
-                showAppPicker();
-                return true;
-            }
         }
         return super.dispatchKeyEvent(event);
-    }
-
-    // API-19-safe bottom-row check: the selected tile's bottom edge must match
-    // the lowest bottom edge among all visible tiles. Works with auto_fit columns.
-    private boolean isInLastRow(int position) {
-        int firstVisible = appGridView.getFirstVisiblePosition();
-        View selected = appGridView.getChildAt(position - firstVisible);
-        if (selected == null) {
-            return false;
-        }
-        int count = appGridView.getChildCount();
-        int lowestBottom = Integer.MIN_VALUE;
-        for (int i = 0; i < count; i++) {
-            View child = appGridView.getChildAt(i);
-            if (child != null && child.getBottom() > lowestBottom) {
-                lowestBottom = child.getBottom();
-            }
-        }
-        return selected.getBottom() >= lowestBottom;
     }
 
     // ---------- Ambient backdrop ----------
@@ -587,16 +620,27 @@ public class MainActivity extends Activity {
                 app.label = info.loadLabel(packageManager).toString();
                 app.packageName = info.activityInfo.packageName;
                 app.icon = info.loadIcon(packageManager);
-                appList.add(app);
+                allApps.add(app);
             }
         }
 
-        Collections.sort(appList, new Comparator<AppInfo>() {
+        Collections.sort(allApps, new Comparator<AppInfo>() {
             @Override
             public int compare(AppInfo a, AppInfo b) {
                 return a.label.compareToIgnoreCase(b.label);
             }
         });
+    }
+
+    // Build the visible home screen list: shown apps + Settings gear first
+    private void applyHiddenFilter() {
+        java.util.Set<String> hidden = LauncherPreferences.getHiddenPackages(this);
+        appList.clear();
+        for (AppInfo app : allApps) {
+            if (!hidden.contains(app.packageName)) {
+                appList.add(app);
+            }
+        }
 
         // Built-in Settings app: always first tile in the grid, tvOS style
         AppInfo settingsApp = new AppInfo();
