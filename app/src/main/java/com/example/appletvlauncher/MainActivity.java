@@ -52,7 +52,6 @@ public class MainActivity extends Activity {
     private GridView appGridView;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
     private PackageManager packageManager;
-    private TileAdapter tileAdapter;
 
     private TextView headerClock;
     private TextView screensaverClock;
@@ -67,10 +66,11 @@ public class MainActivity extends Activity {
     private View ccSearch;
     private View inputButton;
     private View ccButton;
+    private View appsButton;
 
     private boolean ccOpen = false;
     private int aerialIndex = 0;
-    private int lastHomeRevision = -1;
+    private int selectedPosition = 0;
 
     private final Handler handler = new Handler();
     private final Runnable dimRunnable = new Runnable() {
@@ -121,12 +121,12 @@ public class MainActivity extends Activity {
         ccSearch = findViewById(R.id.ccSearch);
         inputButton = findViewById(R.id.inputButton);
         ccButton = findViewById(R.id.ccButton);
+        appsButton = findViewById(R.id.appsButton);
 
         performAutoDebloat();
         loadInstalledApps();
 
-        tileAdapter = new TileAdapter();
-        appGridView.setAdapter(tileAdapter);
+        appGridView.setAdapter(new TileAdapter());
         appGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -136,6 +136,7 @@ public class MainActivity extends Activity {
         appGridView.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selectedPosition = position;
                 animateTileFocus(view);
                 updateBackdrop(appList.get(position));
             }
@@ -162,15 +163,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        // If the user changed the Home Screen Apps selection, rebuild the grid
-        int revision = LauncherPreferences.getHomeRevision(this);
-        if (revision != lastHomeRevision) {
-            lastHomeRevision = revision;
-            loadInstalledApps();
-            if (tileAdapter != null) {
-                tileAdapter.notifyDataSetChanged();
-            }
-        }
         resetStandby();
         handler.postDelayed(clockTick, 30000L);
     }
@@ -191,9 +183,17 @@ public class MainActivity extends Activity {
         resetStandby();
     }
 
-    // ---------- Header buttons: Input + Control Center ----------
+    // ---------- Header buttons: Apps + Input + Control Center ----------
 
     private void setupHeaderButtons() {
+        // Apps button opens a quick picker of every installed app
+        appsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showAppPicker();
+            }
+        });
+
         // Control Center button opens the same panel as the MENU key
         ccButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -209,6 +209,28 @@ public class MainActivity extends Activity {
                 showInputPicker();
             }
         });
+    }
+
+    // Quick app picker: same list as the home grid, tap = launch (tvOS style)
+    private void showAppPicker() {
+        if (appList.isEmpty()) {
+            Toast.makeText(this, R.string.no_apps, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String[] names = new String[appList.size()];
+        for (int i = 0; i < appList.size(); i++) {
+            names[i] = appList.get(i).label;
+        }
+        new android.app.AlertDialog.Builder(this)
+                .setTitle(R.string.btn_apps)
+                .setItems(names, new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface dialog, int which) {
+                        launchApp(appList.get(which));
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void showInputPicker() {
@@ -416,8 +438,35 @@ public class MainActivity extends Activity {
                 closeControlCenter();
                 return true;
             }
+            // tvOS-style: pressing DOWN on the last grid row opens the all-apps list
+            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN
+                    && appGridView.hasFocus()
+                    && !appList.isEmpty()
+                    && isInLastRow(selectedPosition)) {
+                showAppPicker();
+                return true;
+            }
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    // API-19-safe bottom-row check: the selected tile's bottom edge must match
+    // the lowest bottom edge among all visible tiles. Works with auto_fit columns.
+    private boolean isInLastRow(int position) {
+        int firstVisible = appGridView.getFirstVisiblePosition();
+        View selected = appGridView.getChildAt(position - firstVisible);
+        if (selected == null) {
+            return false;
+        }
+        int count = appGridView.getChildCount();
+        int lowestBottom = Integer.MIN_VALUE;
+        for (int i = 0; i < count; i++) {
+            View child = appGridView.getChildAt(i);
+            if (child != null && child.getBottom() > lowestBottom) {
+                lowestBottom = child.getBottom();
+            }
+        }
+        return selected.getBottom() >= lowestBottom;
     }
 
     // ---------- Ambient backdrop ----------
@@ -528,27 +577,18 @@ public class MainActivity extends Activity {
     }
 
     private void loadInstalledApps() {
-        appList.clear();
-
         Intent intent = new Intent(Intent.ACTION_MAIN, null);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
 
-        // Apps the user unchecked in Settings > Home Screen Apps
-        java.util.Set<String> hidden = LauncherPreferences.getHiddenPackages(this);
-
         List<ResolveInfo> unfilteredApps = packageManager.queryIntentActivities(intent, 0);
         for (ResolveInfo info : unfilteredApps) {
-            if (info.activityInfo.packageName.equals(getPackageName())) {
-                continue;
+            if (!info.activityInfo.packageName.equals(getPackageName())) {
+                AppInfo app = new AppInfo();
+                app.label = info.loadLabel(packageManager).toString();
+                app.packageName = info.activityInfo.packageName;
+                app.icon = info.loadIcon(packageManager);
+                appList.add(app);
             }
-            if (hidden.contains(info.activityInfo.packageName)) {
-                continue; // user hid this app from Home
-            }
-            AppInfo app = new AppInfo();
-            app.label = info.loadLabel(packageManager).toString();
-            app.packageName = info.activityInfo.packageName;
-            app.icon = info.loadIcon(packageManager);
-            appList.add(app);
         }
 
         Collections.sort(appList, new Comparator<AppInfo>() {
