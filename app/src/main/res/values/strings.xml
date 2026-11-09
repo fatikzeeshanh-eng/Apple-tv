@@ -32,11 +32,15 @@
     <string name="about_body">AppleTV Launcher v2.8\n\nA tvOS-style home for Android 4.4 KitKat.\nMade in Pakistan 🇵🇰 by an 11-year-old kid.\nBuilt with AshnaAI.</string>
     <string name="btn_apps">Apps</string>
     <string name="btn_add_apps">Add Apps</string>
-    <string name="btn_input">Input</string>
-    <string name="btn_control_center">Control Center</string>
     <string name="add_apps_title">Add Apps to Home Screen</string>
     <string name="add_apps_done">Done</string>
+    <string name="btn_input">Input</string>
+    <string name="btn_control_center">Control Center</string>
     <string name="input_title">Choose Input</string>
     <string name="input_selected">Selected</string>
     <string name="input_fallback_hint">If the input didn\'t switch, press the Source button on your box remote</string>
+    <string name="settings_home_apps">Home Screen Apps</string>
+    <string name="customize_title">Home Screen Apps</string>
+    <string name="customize_hint">Uncheck an app to hide it from the Home screen</string>
+    <string name="customize_back_hint">Press BACK when done — Home updates instantly</string>
 </resources>
