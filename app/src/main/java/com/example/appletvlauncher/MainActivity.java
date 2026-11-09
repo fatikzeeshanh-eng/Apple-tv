@@ -40,12 +40,14 @@ import java.util.Locale;
 public class MainActivity extends Activity {
 
     private static final long DIM_AFTER_MS = 60000L;
-    private static final long SAVER_AFTER_MS = 300000L;
 
     // Aerial-style screensaver: sky colors it drifts through (deep night blues/purples)
     private static final int[] AERIAL_COLORS = {
             0xFF0B1026, 0xFF1B2A4A, 0xFF2E4370, 0xFF1F2A44, 0xFF0B1026
     };
+
+    // Special entry: built-in tvOS-style Settings app shown as a gear tile
+    private static final String SETTINGS_PACKAGE = "@@settings@@";
 
     private GridView appGridView;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
@@ -253,13 +255,17 @@ public class MainActivity extends Activity {
         }
     }
 
-    // ---------- Standby (Apple TV style) ----------
+    // ---------- Standby (Apple TV style, timing set in Settings app) ----------
 
     private void resetStandby() {
         handler.removeCallbacks(dimRunnable);
         handler.removeCallbacks(saverRunnable);
         handler.postDelayed(dimRunnable, DIM_AFTER_MS);
-        handler.postDelayed(saverRunnable, SAVER_AFTER_MS);
+        long saverMs = LauncherPreferences.getSaverDelayMs(this);
+        if (saverMs > 0) {
+            // Screensaver must come after the dim stage
+            handler.postDelayed(saverRunnable, Math.max(saverMs, DIM_AFTER_MS + 1000L));
+        }
     }
 
     private void wakeFromStandby() {
@@ -307,34 +313,9 @@ public class MainActivity extends Activity {
         }, 400);
     }
 
-    // Slowly drift the screensaver sky through deep night colors (Aerial vibe)
+    // Slow breathing fade on the screensaver — Aerial vibe, API-19 safe
     private void driftAerial() {
-        Drawable bg = screensaver.getBackground();
-        if (!(bg instanceof GradientDrawable)) {
-            return;
-        }
-        int from = ((GradientDrawable) bg).getColor() != null ? 0 : 0; // not used
-        int fromColor = 0xFF0B1026;
-        if (bg instanceof GradientDrawable) {
-            // Track drifting via index; base color comes from the palette
-            fromColor = AERIAL_COLORS[aerialIndex];
-        }
-        int toColor = AERIAL_COLORS[(aerialIndex + 1) % AERIAL_COLORS.length];
-        aerialIndex = (aerialIndex + 1) % AERIAL_COLORS.length;
-
         final View target = screensaver;
-        ValueAnimator drift = ValueAnimator.ofObject(new ArgbEvaluator(), fromColor, toColor);
-        drift.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                // Dim the whole screensaver background tint via a color filter-free alpha layer:
-                // simplest API-19-safe approach: tint the root overlay alpha slightly.
-                // We animate the screensaver's background color by setting a color overlay drawable.
-                target.invalidate();
-            }
-        });
-        // Since GradientDrawable gradient colors can't be swapped mid-way easily on API 19,
-        // we instead cross-fade the whole screensaver alpha subtly. Simple and smooth:
         target.animate().alpha(0.92f).setDuration(4000L).withEndAction(new Runnable() {
             @Override
             public void run() {
@@ -451,6 +432,10 @@ public class MainActivity extends Activity {
     // ---------- Core ----------
 
     private void launchApp(AppInfo app) {
+        if (SETTINGS_PACKAGE.equals(app.packageName)) {
+            startActivity(new Intent(this, SettingsActivity.class));
+            return;
+        }
         Intent intent = packageManager.getLaunchIntentForPackage(app.packageName);
         if (intent != null) {
             startActivity(intent);
@@ -495,6 +480,13 @@ public class MainActivity extends Activity {
                 return a.label.compareToIgnoreCase(b.label);
             }
         });
+
+        // Built-in Settings app: always first tile in the grid, tvOS style
+        AppInfo settingsApp = new AppInfo();
+        settingsApp.label = getString(R.string.settings_title);
+        settingsApp.packageName = SETTINGS_PACKAGE;
+        settingsApp.icon = getResources().getDrawable(R.drawable.ic_launcher);
+        appList.add(0, settingsApp);
     }
 
     static class AppInfo {
