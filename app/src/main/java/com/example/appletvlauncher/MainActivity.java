@@ -113,8 +113,8 @@ public class MainActivity extends Activity {
         ccWifiState = (TextView) findViewById(R.id.ccWifiState);
         ccBluetoothState = (TextView) findViewById(R.id.ccBluetoothState);
 
-        // Butter-smooth D-pad scrolling up and down
-        appGridView.setSmoothScrollingEnabled(true);
+        // Smooth D-pad scrolling up and down (smoothScrollbar is also set in the layout)
+        appGridView.setSmoothScrollbarEnabled(true);
 
         performAutoDebloat();
         loadInstalledApps();
