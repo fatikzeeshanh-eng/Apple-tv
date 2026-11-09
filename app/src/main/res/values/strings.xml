@@ -17,4 +17,11 @@
     <string name="cc_optimize">Optimize TV</string>
     <string name="cc_refresh">Refresh Apps</string>
     <string name="cc_hint">Press MENU or BACK to close</string>
+    <string name="cc_wifi">Wi-Fi</string>
+    <string name="cc_bluetooth">Bluetooth</string>
+    <string name="cc_search">Search Apps</string>
+    <string name="cc_wifi_on">Wi-Fi On</string>
+    <string name="cc_wifi_off">Wi-Fi Off</string>
+    <string name="cc_bt_on">Bluetooth On</string>
+    <string name="cc_bt_off">Bluetooth Off</string>
 </resources>
