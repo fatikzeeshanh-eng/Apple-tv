@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Ambient blurred backdrop layer, tinted dark like tvOS -->
+    <item android:id="@+id/backdropBase">
+        <shape android:shape="rectangle">
+            <solid android:color="#101014" />
+        </shape>
+    </item>
+    <!-- Blurred focused-icon color wash drawn dynamically in code -->
+    <item android:id="@+id/backdropWash">
+        <shape android:shape="rectangle">
+            <solid android:color="#000000" />
+        </shape>
+    </item>
+    <!-- Dark vignette so content always stays readable -->
+    <item android:id="@+id/backdropVignette">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="#00000000"
+                android:centerColor="#4D000000"
+                android:endColor="#B3000000"
+                android:type="linear" />
+        </shape>
+    </item>
+</layer-list>
