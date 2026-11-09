@@ -113,7 +113,7 @@ public class MainActivity extends Activity {
             return appList.get(position);
         }
 
-        @ @Override
+        @Override
         public long getItemId(int position) {
             return position;
         }
