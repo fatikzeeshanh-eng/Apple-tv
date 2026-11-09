@@ -5,6 +5,9 @@ import android.animation.ValueAnimator;
 import android.animation.ArgbEvaluator;
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -15,19 +18,22 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.LayerDrawable;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.Settings;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.GridView;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,8 +47,10 @@ import java.util.Locale;
 
 public class MainActivity extends Activity {
 
-    private static final long DIM_AFTER_MS = 60000L;
-    private static final long SAVER_AFTER_MS = 300000L;
+    // Apple TV original standby behaviour:
+    // screen dims while idle, screensaver starts "After 2 Minutes" (Apple default), any key wakes.
+    private static final long DIM_AFTER_MS = 60_000;       // 1 min idle -> gentle dim
+    private static final long SAVER_AFTER_MS = 120_000;    // 2 min idle -> screensaver (Apple TV default)
 
     private GridView appGridView;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
@@ -54,14 +62,15 @@ public class MainActivity extends Activity {
     private TextView screensaverDate;
     private View dimOverlay;
     private View screensaver;
-    private View contentLayer;
-    private View ccPanel;
-    private View ccSleep;
-    private View ccWifi;
-    private View ccBluetooth;
-    private View ccSearch;
 
+    // Control Center
+    private View ccPanel;
+    private View ccInner;
+    private TextView ccWifiState;
+    private TextView ccBluetoothState;
     private boolean ccOpen = false;
+
+    private View contentLayer;
 
     private final Handler handler = new Handler();
     private final Runnable dimRunnable = new Runnable() {
@@ -80,7 +89,7 @@ public class MainActivity extends Activity {
         @Override
         public void run() {
             updateClocks();
-            handler.postDelayed(clockTick, 30000L);
+            handler.postDelayed(clockTick, 30_000);
         }
     };
 
@@ -98,11 +107,14 @@ public class MainActivity extends Activity {
         dimOverlay = findViewById(R.id.dimOverlay);
         screensaver = findViewById(R.id.screensaver);
         contentLayer = findViewById(R.id.contentLayer);
+
         ccPanel = findViewById(R.id.ccPanel);
-        ccSleep = findViewById(R.id.ccSleep);
-        ccWifi = findViewById(R.id.ccWifi);
-        ccBluetooth = findViewById(R.id.ccBluetooth);
-        ccSearch = findViewById(R.id.ccSearch);
+        ccInner = ((ViewGroup) ccPanel).getChildAt(1);
+        ccWifiState = (TextView) findViewById(R.id.ccWifiState);
+        ccBluetoothState = (TextView) findViewById(R.id.ccBluetoothState);
+
+        // Butter-smooth D-pad scrolling up and down
+        appGridView.setSmoothScrollingEnabled(true);
 
         performAutoDebloat();
         loadInstalledApps();
@@ -129,6 +141,7 @@ public class MainActivity extends Activity {
         buildShelf();
         setupControlCenter();
         updateClocks();
+        updateConnectionStates();
 
         appGridView.post(new Runnable() {
             @Override
@@ -144,7 +157,8 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         resetStandby();
-        handler.postDelayed(clockTick, 30000L);
+        handler.postDelayed(clockTick, 30_000);
+        updateConnectionStates();
     }
 
     @Override
@@ -162,10 +176,34 @@ public class MainActivity extends Activity {
         resetStandby();
     }
 
-    // ---------- Control Center (tvOS 17 style) ----------
+    // ---------- Remote keys: MENU opens Control Center, BACK closes it ----------
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_MENU) {
+            if (ccOpen) {
+                closeControlCenter();
+            } else {
+                openControlCenter();
+            }
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (ccOpen) {
+            closeControlCenter();
+            return;
+        }
+        // Prevent exiting home screen via remote back button
+    }
+
+    // ---------- Control Center (tvOS slide-down glass panel) ----------
 
     private void setupControlCenter() {
-        ccSleep.setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.ccSleep).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 closeControlCenter();
@@ -173,81 +211,209 @@ public class MainActivity extends Activity {
             }
         });
 
-        ccWifi.setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.ccWifi).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
-                    startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+                    startActivity(new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS));
                 } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Wi-Fi settings not available", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Wi-Fi settings unavailable", Toast.LENGTH_SHORT).show();
                 }
+                closeControlCenter();
             }
         });
 
-        ccBluetooth.setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.ccBluetooth).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
-                    startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+                    startActivity(new Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS));
                 } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Bluetooth settings not available", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Bluetooth settings unavailable", Toast.LENGTH_SHORT).show();
                 }
+                closeControlCenter();
             }
         });
 
-        ccSearch.setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.ccSearch).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    Intent search = new Intent(Intent.ACTION_SEARCH_LONG_PRESS);
-                    search.addCategory(Intent.CATEGORY_DEFAULT);
-                    startActivity(search);
-                } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Search not available on this box", Toast.LENGTH_SHORT).show();
-                }
+                closeControlCenter();
+                showSearchDialog();
             }
         });
-    }
-
-    private void toggleControlCenter() {
-        if (ccOpen) {
-            closeControlCenter();
-        } else {
-            openControlCenter();
-        }
     }
 
     private void openControlCenter() {
         ccOpen = true;
-        resetStandby();
-        ccPanel.setAlpha(0f);
+        updateConnectionStates();
         ccPanel.setVisibility(View.VISIBLE);
-        ObjectAnimator.ofFloat(ccPanel, "alpha", 0f, 1f).setDuration(250).start();
-        ccSleep.requestFocus();
+        ccPanel.setAlpha(0f);
+        ccPanel.animate().alpha(1f).setDuration(200).start();
+
+        // Smooth slide-down from the top, like tvOS
+        ccInner.post(new Runnable() {
+            @Override
+            public void run() {
+                float h = ccInner.getHeight();
+                ccInner.setTranslationY(-h);
+                ccInner.animate()
+                        .translationY(0f)
+                        .setDuration(350)
+                        .setInterpolator(new DecelerateInterpolator())
+                        .start();
+                ccInner.requestFocus();
+                ccInner.setFocusableInTouchMode(true);
+            }
+        });
     }
 
     private void closeControlCenter() {
-        if (!ccOpen) {
-            return;
-        }
+        if (!ccOpen) return;
         ccOpen = false;
-        ObjectAnimator.ofFloat(ccPanel, "alpha", 1f, 0f).setDuration(250).start();
-        ccPanel.postDelayed(new Runnable() {
+        float h = ccInner.getHeight();
+        ccInner.animate()
+                .translationY(-h)
+                .setDuration(280)
+                .setInterpolator(new DecelerateInterpolator())
+                .start();
+        ccPanel.animate().alpha(0f).setDuration(280).withEndAction(new Runnable() {
             @Override
             public void run() {
                 ccPanel.setVisibility(View.GONE);
+                ccInner.setTranslationY(0f);
             }
-        }, 250);
+        });
         if (appGridView.getChildCount() > 0) {
             appGridView.getChildAt(0).requestFocus();
         }
     }
 
-    // ---------- Standby (Apple TV style) ----------
+    private void updateConnectionStates() {
+        try {
+            WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
+            boolean wifiOn = wifi != null && wifi.isWifiEnabled();
+            ccWifiState.setText(wifiOn ? R.string.cc_wifi_on : R.string.cc_wifi_off);
+        } catch (Exception e) {
+            ccWifiState.setText(R.string.cc_wifi_off);
+        }
+
+        try {
+            BluetoothAdapter bt = BluetoothAdapter.getDefaultAdapter();
+            boolean btOn = bt != null && bt.isEnabled();
+            ccBluetoothState.setText(btOn ? R.string.cc_bt_on : R.string.cc_bt_off);
+        } catch (Exception e) {
+            ccBluetoothState.setText(R.string.cc_bt_off);
+        }
+    }
+
+    // ---------- App search (tvOS Search style) ----------
+
+    private void showSearchDialog() {
+        final List<String> labels = new ArrayList<String>();
+        for (AppInfo app : appList) {
+            labels.add(app.label);
+        }
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.cc_search);
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        final EditText input = new EditText(this);
+        input.setHint(R.string.cc_search);
+        input.setTextColor(Color.WHITE);
+        input.setHintTextColor(0x88FFFFFF);
+        box.addView(input);
+        final ListView list = new ListView(this);
+        final BaseAdapter searchAdapter = new BaseAdapter() {
+            @Override
+            public int getCount() {
+                return labels.size();
+            }
+
+            @Override
+            public Object getItem(int position) {
+                return labels.get(position);
+            }
+
+            @Override
+            public long getItemId(int position) {
+                return position;
+            }
+
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                TextView tv;
+                if (convertView == null) {
+                    tv = new TextView(MainActivity.this);
+                    tv.setPadding(32, 24, 32, 24);
+                    tv.setTextColor(Color.WHITE);
+                    tv.setTextSize(18);
+                } else {
+                    tv = (TextView) convertView;
+                }
+                tv.setText(labels.get(position));
+                return tv;
+            }
+        };
+        list.setAdapter(searchAdapter);
+        box.addView(list);
+        builder.setView(box);
+
+        input.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                labels.clear();
+                String q = s.toString().trim().toLowerCase(Locale.getDefault());
+                for (AppInfo app : appList) {
+                    if (q.isEmpty() || app.label.toLowerCase(Locale.getDefault()).contains(q)) {
+                        labels.add(app.label);
+                    }
+                }
+                searchAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+
+        builder.setNegativeButton(R.string.cc_hint, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        final AlertDialog dialog = builder.show();
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String picked = labels.get(position);
+                for (AppInfo app : appList) {
+                    if (app.label.equals(picked)) {
+                        dialog.dismiss();
+                        launchApp(app);
+                        return;
+                    }
+                }
+            }
+        });
+    }
+
+    // ---------- Standby (Apple TV original: dim -> screensaver after 2 min -> any key wakes) ----------
 
     private void resetStandby() {
         handler.removeCallbacks(dimRunnable);
         handler.removeCallbacks(saverRunnable);
+        if (ccOpen) {
+            return; // Don't sleep while Control Center is open
+        }
         handler.postDelayed(dimRunnable, DIM_AFTER_MS);
         handler.postDelayed(saverRunnable, SAVER_AFTER_MS);
     }
@@ -268,11 +434,14 @@ public class MainActivity extends Activity {
 
     private void showScreensaver() {
         updateClocks();
+        handler.removeCallbacks(dimRunnable);
+        dimOverlay.setVisibility(View.GONE);
         screensaver.setAlpha(0f);
         screensaver.setVisibility(View.VISIBLE);
         ObjectAnimator fade = ObjectAnimator.ofFloat(screensaver, "alpha", 0f, 1f);
         fade.setDuration(1200);
         fade.start();
+        resetStandby();
     }
 
     private void animateWake() {
@@ -302,24 +471,6 @@ public class MainActivity extends Activity {
         screensaverDate.setText(dateFmt.format(cal.getTime()));
     }
 
-    // ---------- Remote keys ----------
-
-    @Override
-    public boolean dispatchKeyEvent(KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_DOWN) {
-            int keyCode = event.getKeyCode();
-            if (keyCode == KeyEvent.KEYCODE_MENU) {
-                toggleControlCenter();
-                return true;
-            }
-            if (keyCode == KeyEvent.KEYCODE_BACK && ccOpen) {
-                closeControlCenter();
-                return true;
-            }
-        }
-        return super.dispatchKeyEvent(event);
-    }
-
     // ---------- Ambient backdrop ----------
 
     private void updateBackdrop(AppInfo app) {
@@ -335,9 +486,7 @@ public class MainActivity extends Activity {
 
             int[] pixels = new int[size * size];
             small.getPixels(pixels, 0, size, 0, 0, size, size);
-            long r = 0;
-            long g = 0;
-            long b = 0;
+            long r = 0, g = 0, b = 0;
             int counted = 0;
             for (int pixel : pixels) {
                 if ((pixel & 0xFF000000) != 0) {
@@ -347,9 +496,7 @@ public class MainActivity extends Activity {
                     counted++;
                 }
             }
-            if (counted == 0) {
-                return;
-            }
+            if (counted == 0) return;
 
             int wash = Color.rgb((int) (r / counted / 3), (int) (g / counted / 3), (int) (b / counted / 3));
 
@@ -380,12 +527,10 @@ public class MainActivity extends Activity {
         }
     }
 
-    // ---------- Focus animations ----------
+    // ---------- Focus zoom ----------
 
     private void animateGridFocus(View view) {
-        if (view == null) {
-            return;
-        }
+        if (view == null) return;
         view.animate().scaleX(1.12f).scaleY(1.12f)
                 .setDuration(150)
                 .setInterpolator(new DecelerateInterpolator())
@@ -422,20 +567,6 @@ public class MainActivity extends Activity {
                 @Override
                 public void onClick(View v) {
                     launchApp(app);
-                }
-            });
-            card.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                @Override
-                public void onFocusChange(View v, boolean hasFocus) {
-                    if (hasFocus) {
-                        v.animate().scaleX(1.08f).scaleY(1.08f).setDuration(150).start();
-                        int[] loc = new int[2];
-                        v.getLocationOnScreen(loc);
-                        HorizontalScrollView scroll = (HorizontalScrollView) shelfRow.getParent();
-                        scroll.smoothScrollTo(Math.max(0, loc[0] - scroll.getWidth() / 3), 0);
-                    } else {
-                        v.animate().scaleX(1f).scaleY(1f).setDuration(150).start();
-                    }
                 }
             });
 
@@ -548,18 +679,5 @@ public class MainActivity extends Activity {
             ImageView icon;
             TextView label;
         }
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (ccOpen) {
-            closeControlCenter();
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        handler.removeCallbacksAndMessages(null);
     }
 }
