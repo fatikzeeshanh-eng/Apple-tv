@@ -11,6 +11,7 @@ import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -48,6 +49,9 @@ public class MainActivity extends Activity {
 
     // Special entry: built-in tvOS-style Settings app shown as a gear tile
     private static final String SETTINGS_PACKAGE = "@@settings@@";
+
+    // RAM-saver: icons are drawn once into 96px bitmaps (see shrinkIcon)
+    private static final int ICON_CACHE_PX = 96;
 
     private GridView appGridView;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
@@ -609,6 +613,28 @@ public class MainActivity extends Activity {
         }
     }
 
+    // RAM-saver: draw each icon once into a small 96px bitmap.
+    // PackageManager icons are large drawables; on 512MB boxes this cuts
+    // the icon memory the grid keeps alive by roughly 10x.
+    private Drawable shrinkIcon(Drawable original) {
+        if (original == null) {
+            return null;
+        }
+        try {
+            int size = ICON_CACHE_PX;
+            Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_4444);
+            Canvas c = new Canvas(bmp);
+            original.setBounds(0, 0, size, size);
+            original.draw(c);
+            BitmapDrawable small = new BitmapDrawable(getResources(), bmp);
+            small.setBounds(0, 0, size, size);
+            return small;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return original;
+        }
+    }
+
     private void loadInstalledApps() {
         Intent intent = new Intent(Intent.ACTION_MAIN, null);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -619,7 +645,7 @@ public class MainActivity extends Activity {
                 AppInfo app = new AppInfo();
                 app.label = info.loadLabel(packageManager).toString();
                 app.packageName = info.activityInfo.packageName;
-                app.icon = info.loadIcon(packageManager);
+                app.icon = shrinkIcon(info.loadIcon(packageManager));
                 allApps.add(app);
             }
         }
