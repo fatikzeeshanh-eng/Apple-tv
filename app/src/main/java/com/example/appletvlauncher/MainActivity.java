@@ -70,6 +70,7 @@ public class MainActivity extends Activity {
 
     private boolean ccOpen = false;
     private int aerialIndex = 0;
+    private int selectedPosition = 0;
 
     private final Handler handler = new Handler();
     private final Runnable dimRunnable = new Runnable() {
@@ -135,6 +136,7 @@ public class MainActivity extends Activity {
         appGridView.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selectedPosition = position;
                 animateTileFocus(view);
                 updateBackdrop(appList.get(position));
             }
@@ -436,8 +438,24 @@ public class MainActivity extends Activity {
                 closeControlCenter();
                 return true;
             }
+            // tvOS-style: pressing DOWN on the last grid row opens the all-apps list
+            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN
+                    && appGridView.hasFocus()
+                    && !appList.isEmpty()
+                    && isInLastRow(selectedPosition)) {
+                showAppPicker();
+                return true;
+            }
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    private boolean isInLastRow(int position) {
+        int columns = appGridView.getNumColumns();
+        if (columns < 1) {
+            columns = 1;
+        }
+        return appList.size() - position <= columns;
     }
 
     // ---------- Ambient backdrop ----------
