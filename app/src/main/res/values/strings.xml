@@ -1,13 +1,13 @@
 <resources>
-    <string name="app_name">AppleTV Launcher</string>
+    <string name="app_name">Clean Your TV</string>
     <string name="tv_wordmark"> tv</string>
     <string name="section_featured">Featured</string>
     <string name="section_all_apps">All Apps</string>
     <string name="press_to_open">Press select to open</string>
     <string name="no_apps">No apps found</string>
-    <string name="made_in_pakistan">Made in Pakistan 🇵🇰 by an 11-year-old kid</string>
-    <string name="hero_title">Apple TV Experience</string>
-    <string name="hero_subtitle">KitKat Debloated Edition — Auto-Optimized on Launch</string>
+    <string name="made_in_pakistan">Clean Your TV — Made in Pakistan 🇵🇰 by an 11-year-old kid</string>
+    <string name="hero_title">Clean Your TV</string>
+    <string name="hero_subtitle">Clean Your TV Edition — KitKat Debloated &amp; Auto-Optimized</string>
     <string name="tab_featured">Featured</string>
     <string name="tab_apps">Apps</string>
     <string name="shelf_empty">No apps installed</string>
@@ -29,7 +29,7 @@
     <string name="settings_optimize">Optimize TV</string>
     <string name="settings_about">About</string>
     <string name="settings_hint">Press BACK to return to Home</string>
-    <string name="about_body">AppleTV Launcher v2.8\n\nA tvOS-style home for Android 4.4 KitKat.\nMade in Pakistan 🇵🇰 by an 11-year-old kid.\nBuilt with AshnaAI.</string>
+    <string name="about_body">Clean Your TV v2.9\n\nA tvOS-style home for Android 4.4 KitKat.\nCleans bloatware, optimizes RAM, gives your TV the Apple TV look.\n\nMade in Pakistan 🇵🇰 by an 11-year-old kid.\nBuilt with AshnaAI.</string>
     <string name="btn_apps">Apps</string>
     <string name="btn_add_apps">Add Apps</string>
     <string name="add_apps_title">Add Apps to Home Screen</string>
