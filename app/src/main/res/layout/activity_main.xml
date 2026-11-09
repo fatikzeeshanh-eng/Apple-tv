@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@drawable/background_gradient">
 
     <!-- Top Tab Bar (tvOS style: Featured | Apps) -->
@@ -50,33 +49,28 @@
     </LinearLayout>
 
     <!-- Featured Shelf (big rounded cards with reflections, top 3 apps) -->
-    <LinearLayout
-        android:id="@+id/shelfSection"
+    <HorizontalScrollView
+        android:id="@+id/shelfScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_below="@id/tabBar"
+        android:scrollbars="none"
+        android:paddingLeft="48dp"
+        android:paddingRight="48dp">
 
-        <HorizontalScrollView
-            android:id="@+id/shelfScroll"
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:id="@+id/shelfRow"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:paddingLeft="48dp"
-            android:paddingRight="48dp">
-
-            <LinearLayout
-                android:id="@+id/shelfRow"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-        </HorizontalScrollView>
-    </LinearLayout>
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
 
     <!-- Section Header -->
     <TextView
         android:id="@+id/sectionApps"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/shelfScroll"
         android:layout_marginLeft="48dp"
         android:layout_marginTop="24dp"
         android:text="@string/section_apps"
@@ -89,10 +83,12 @@
         android:id="@+id/appGridView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@id/sectionApps"
         android:layout_marginLeft="48dp"
         android:layout_marginRight="48dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="32dp"
+        android:layout_above="@id/footerCredit"
+        android:layout_marginBottom="8dp"
         android:columnWidth="110dp"
         android:numColumns="auto_fit"
         android:horizontalSpacing="24dp"
@@ -100,4 +96,17 @@
         android:stretchMode="columnWidth"
         android:gravity="center" />
 
-</LinearLayout>
+    <!-- Footer credit -->
+    <TextView
+        android:id="@+id/footerCredit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:gravity="center"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:text="@string/made_in_pakistan"
+        android:textColor="#66FFFFFF"
+        android:textSize="12sp" />
+
+</RelativeLayout>
