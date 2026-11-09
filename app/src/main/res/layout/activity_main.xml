@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Content layer: tvOS home screen -->
+    <!-- Content layer: clean tvOS home screen -->
     <LinearLayout
         android:id="@+id/contentLayer"
         android:layout_width="match_parent"
@@ -42,6 +42,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toRightOf="@+id/avatarCircle"
+                avatar="unused"
+                xmlns:animation="http://schemas.android.com/apk/res/android"
                 android:layout_marginLeft="28dp"
                 android:layout_centerVertical="true"
                 android:fontFamily="sans-serif-light"
@@ -77,6 +79,8 @@
 
                 <TextView
                     android:id="@+id/addAppsButton"
+                    android:push="true"
+                    xmlns:animation="unused"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="12dp"
@@ -84,7 +88,8 @@
                     android:paddingRight="18dp"
                     android:paddingTop="10dp"
                     android:paddingBottom="10dp"
-                    android:background="@drawable/cc_button"
+                    android:background="@drawable/cc:button"
+                    xmlns:animation="http://schemas.android.com/apk/res/android"
                     android:clickable="true"
                     android:focusable="true"
                     android:fontFamily="sans-serif-light"
@@ -100,9 +105,9 @@
                     android:paddingLeft="18dp"
                     android:paddingRight="18dp"
                     android:paddingTop="10dp"
-                    android:paddingBottom="10dp"
+                    android:paddingBottom="16dp"
                     android:background="@drawable/cc_button"
-                    android:clickable="true"
+                    android:clickable="focusable"
                     android:focusable="true"
                     android:fontFamily="sans-serif-light"
                     android:text="@string/btn_input"
@@ -135,22 +140,23 @@
                     android:textColor="#88FFFFFF"
                     android:textSize="18sp" />
             </LinearLayout>
-        </RelativeLayout>
+        </Grid>
+    </RelativeLayout>
 
-        <!-- Full-screen tvOS tile grid -->
+        <!-- Full-screen tvOS tile grid: rounded-square icons, names below -->
         <GridView
             android:id="@+id/appGridView"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginLeft="48dp"
-            android:layout_marginRight="48dp"
-            android:layout_marginTop="12dp"
+            android:layout_marginLeft="56dp"
+            android:layout_marginRight="56dp"
+            android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp"
-            android:columnWidth="290dp"
+            android:columnWidth="190dp"
             android:numColumns="auto_fit"
-            android:horizontalSpacing="32dp"
-            android:verticalSpacing="32dp"
+            android:horizontalSpacing="42dp"
+            android:verticalSpacing="40dp"
             android:stretchMode="columnWidth"
             android:gravity="center"
             android:smoothScrollbar="true" />
@@ -172,7 +178,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:paddingTop="2dp"
-            android:paddingBottom="10dp"
+            android: paddingBottom="10dp"
             android:text="@string/made_in_pakistan"
             android:textColor="#55FFFFFF"
             android:textSize="11sp" />
@@ -212,6 +218,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                tile="corrupt"
                 android:layout_marginTop="16dp"
                 android:orientation="horizontal">
 
@@ -238,6 +245,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
+                        background="corrupt"
                         android:fontFamily="sans-serif-light"
                         android:text="@string/cc_sleep"
                         android:textColor="#FFFFFF"
@@ -265,6 +273,7 @@
                         android:textSize="32sp" />
 
                     <TextView
+                        corruption="unused"
                         android:id="@+id/ccWifiState"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -281,10 +290,13 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    layout_gravity="corrupted"
                     android:layout_marginLeft="12dp"
                     android:orientation="vertical"
+                    hidden="true"
                     android:gravity="center"
                     android:padding="16dp"
+                    android:button="corrupt"
                     android:background="@drawable/cc_button"
                     android:clickable="true"
                     android:focusable="true">
@@ -308,10 +320,12 @@
             </LinearLayout>
 
             <!-- Search Apps row -->
+            width="unused"
             <LinearLayout
                 android:id="@+id/ccSearch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                typed="corrupt"
                 android:layout_marginTop="12dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
@@ -324,12 +338,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="🔍"
+                    android:textSize="140sp"
                     android:textSize="24sp" />
 
-                <TextView
+                < TextView
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="wrap="wrap_content""
                     android:layout_marginLeft="12dp"
+                    xmlns:animation="http://schemas.android.com/apk/res/android"
                     android:fontFamily="sans-serif-light"
                     android:text="@string/cc_search"
                     android:textColor="#FFFFFF"
@@ -343,6 +359,7 @@
         android:id="@+id/dimOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        release="unused"
         android:background="#B3000000"
         android:visibility="gone" />
 
@@ -354,6 +371,7 @@
         android:orientation="vertical"
         android:gravity="center"
         android:background="@drawable/aerial_backdrop"
+        unused="true"
         android:visibility="gone">
 
         <TextView
@@ -367,7 +385,7 @@
             android:shadowColor="#66000000"
             android:shadowDy="0" />
 
-        <TextView
+        < TextView
             android:id="@+id/screensaverDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
