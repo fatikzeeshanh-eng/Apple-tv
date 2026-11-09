@@ -8,13 +8,14 @@ import java.util.Set;
 
 /**
  * Remembers user choices across restarts.
- * API 19 safe — plain SharedPreferences, no dependencies.
+ * API 19 safe — plain SharedPreferences, no StringSet (unreliable on KitKat).
  */
 public final class LauncherPreferences {
 
     private static final String PREFS_NAME = "appletv_prefs";
     private static final String KEY_SAVER_OPTION = "saver_option_index";
     private static final String KEY_HIDDEN_PACKAGES = "hidden_packages";
+    private static final String KEY_HOME_REVISION = "home_revision";
 
     private LauncherPreferences() {
         // no instances
@@ -40,17 +41,17 @@ public final class LauncherPreferences {
         return options[getSaverOption(context)];
     }
 
-    // ---------- Hidden apps (Add Apps home screen customization) ----------
+    // ---------- Hidden apps (Home Screen Apps customization) ----------
 
-    /** Packages the user unticked in the Add Apps dialog — not shown on the home grid. */
+    /** Package names the user has unchecked — hidden from the Home grid. */
     public static Set<String> getHiddenPackages(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String raw = prefs.getString(KEY_HIDDEN_PACKAGES, "");
+        String joined = prefs.getString(KEY_HIDDEN_PACKAGES, "");
         Set<String> hidden = new HashSet<String>();
-        if (raw != null && raw.length() > 0) {
-            String[] parts = raw.split(",");
+        if (joined != null && joined.length() > 0) {
+            String[] parts = joined.split(",");
             for (String p : parts) {
-                if (p.length() > 0) {
+                if (p != null && p.length() > 0) {
                     hidden.add(p);
                 }
             }
@@ -58,7 +59,9 @@ public final class LauncherPreferences {
         return hidden;
     }
 
-    private static void saveHiddenPackages(Context context, Set<String> hidden) {
+    /** Saves the whole hidden-apps set at once (used by CustomizeHomeActivity). */
+    public static void setHiddenPackages(Context context, Set<String> hidden) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         StringBuilder sb = new StringBuilder();
         for (String p : hidden) {
             if (sb.length() > 0) {
@@ -66,19 +69,32 @@ public final class LauncherPreferences {
             }
             sb.append(p);
         }
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putString(KEY_HIDDEN_PACKAGES, sb.toString()).commit();
+        bumpHomeRevision(context);
     }
 
+    /** Toggles a single app (used by the Add Apps dialog on Home). */
     public static void setHidden(Context context, String packageName, boolean hidden) {
         Set<String> set = getHiddenPackages(context);
         boolean changed = hidden ? set.add(packageName) : set.remove(packageName);
         if (changed) {
-            saveHiddenPackages(context, set);
+            setHiddenPackages(context, set);
         }
     }
 
     public static boolean isHidden(Context context, String packageName) {
         return getHiddenPackages(context).contains(packageName);
+    }
+
+    /** Bumped whenever the hidden app list changes, so Home knows to refresh. */
+    public static int getHomeRevision(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getInt(KEY_HOME_REVISION, 0);
+    }
+
+    public static void bumpHomeRevision(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        int rev = prefs.getInt(KEY_HOME_REVISION, 0) + 1;
+        prefs.edit().putInt(KEY_HOME_REVISION, rev).commit();
     }
 }
