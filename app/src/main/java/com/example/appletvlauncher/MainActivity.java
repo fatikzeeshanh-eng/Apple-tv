@@ -15,6 +15,8 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.LayerDrawable;
+import android.media.tv.TvInputInfo;
+import android.media.tv.TvInputManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
@@ -64,6 +66,8 @@ public class MainActivity extends Activity {
     private View ccWifi;
     private View ccBluetooth;
     private View ccSearch;
+    private View inputButton;
+    private View ccButton;
 
     private boolean ccOpen = false;
     private int aerialIndex = 0;
@@ -115,6 +119,8 @@ public class MainActivity extends Activity {
         ccWifi = findViewById(R.id.ccWifi);
         ccBluetooth = findViewById(R.id.ccBluetooth);
         ccSearch = findViewById(R.id.ccSearch);
+        inputButton = findViewById(R.id.inputButton);
+        ccButton = findViewById(R.id.ccButton);
 
         performAutoDebloat();
         loadInstalledApps();
@@ -139,6 +145,7 @@ public class MainActivity extends Activity {
         });
 
         setupControlCenter();
+        setupHeaderButtons();
         updateClocks();
 
         appGridView.post(new Runnable() {
@@ -172,6 +179,94 @@ public class MainActivity extends Activity {
         super.onUserInteraction();
         wakeFromStandby();
         resetStandby();
+    }
+
+    // ---------- Header buttons: Input + Control Center ----------
+
+    private void setupHeaderButtons() {
+        // Control Center button opens the same panel as the MENU key
+        ccButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleControlCenter();
+            }
+        });
+
+        // Input button opens the tvOS-style input picker
+        inputButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showInputPicker();
+            }
+        });
+    }
+
+    private void showInputPicker() {
+        // Real hardware inputs first (HDMI/AV/Tuner) via TvInputManager if this box supports it
+        List<String> labels = new ArrayList<String>();
+        List<String> inputIds = new ArrayList<String>();
+        try {
+            TvInputManager tvInputManager = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
+            if (tvInputManager != null) {
+                List<TvInputInfo> inputs = tvInputManager.getTvInputList();
+                if (inputs != null) {
+                    for (TvInputInfo info : inputs) {
+                        labels.add(info.loadLabel(packageManager).toString());
+                        inputIds.add(info.getId());
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            // TV input framework not available on this box — fall back to the standard list
+        }
+
+        // Standard tvOS-style fallback list so the picker always has options
+        if (labels.isEmpty()) {
+            String[] fallback = {"HDMI 1", "HDMI 2", "AV 1", "AV 2", "TV"};
+            for (String f : fallback) {
+                labels.add(f);
+                inputIds.add(null);
+            }
+        }
+
+        final String[] labelArray = labels.toArray(new String[labels.size()]);
+        final List<String> finalInputIds = inputIds;
+
+        new android.app.AlertDialog.Builder(this)
+                .setTitle(R.string.input_title)
+                .setItems(labelArray, new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface dialog, int which) {
+                        String inputId = finalInputIds.get(which);
+                        boolean switched = false;
+                        if (inputId != null) {
+                            try {
+                                TvInputManager tvInputManager = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
+                                if (tvInputManager != null) {
+                                    // Fire the intent apps use to tune to a TV input
+                                    Intent tune = new Intent(Intent.ACTION_VIEW,
+                                            android.net.Uri.parse("tv://" + inputId));
+                                    tune.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    startActivity(tune);
+                                    switched = true;
+                                }
+                            } catch (Exception e) {
+                                switched = false;
+                            }
+                        }
+                        String chosen = labelArray[which];
+                        if (switched) {
+                            Toast.makeText(MainActivity.this,
+                                    chosen + " " + getString(R.string.input_selected), Toast.LENGTH_SHORT).show();
+                        } else {
+                            // Fallback: this box only switches inputs via its own hardware key
+                            Toast.makeText(MainActivity.this,
+                                    getString(R.string.input_fallback_hint), Toast.LENGTH_LONG).show();
+                        }
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     // ---------- Control Center (tvOS 17 style) ----------
