@@ -11,7 +11,7 @@
         android:orientation="vertical"
         android:background="@drawable/ambient_backdrop">
 
-        <!-- Header: Apple TV wordmark + live clock -->
+        <!-- Header: user avatar + Apple TV wordmark + live clock (tvOS style) -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -20,16 +20,34 @@
             android:paddingTop="32dp"
             android:paddingBottom="12dp">
 
+            <!-- tvOS user avatar circle -->
+            <FrameLayout
+                android:id="@+id/avatarCircle"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/avatar_circle">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="🙂"
+                    android:textSize="22sp" />
+            </FrameLayout>
+
             <TextView
                 android:id="@+id/tvWordmark"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
+                android:layout_toRightOf="@+id/avatarCircle"
+                android:layout_marginLeft="28dp"
                 android:layout_centerVertical="true"
+                android:fontFamily="sans-serif-light"
                 android:text="@string/tv_wordmark"
                 android:textColor="#FFFFFF"
-                android:textSize="34sp"
-                android:textStyle="bold" />
+                android:textSize="34sp" />
 
             <TextView
                 android:id="@+id/headerClock"
@@ -37,6 +55,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
+                android:fontFamily="sans-serif-light"
                 android:textColor="#88FFFFFF"
                 android:textSize="18sp" />
         </RelativeLayout>
@@ -59,13 +78,23 @@
             android:gravity="center"
             android:smoothScrollbar="true" />
 
-        <!-- Footer credit -->
+        <!-- Footer: CC hint + credit -->
+        <TextView
+            android:id="@+id/ccHintBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:text="@string/cc_hint"
+            android:textColor="#44FFFFFF"
+            android:textSize="11sp" />
+
         <TextView
             android:id="@+id/footerCredit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:paddingTop="4dp"
+            android:paddingTop="2dp"
             android:paddingBottom="10dp"
             android:text="@string/made_in_pakistan"
             android:textColor="#55FFFFFF"
@@ -98,6 +127,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-light"
                 android:text="@string/cc_title"
                 android:textColor="#99FFFFFF"
                 android:textSize="14sp" />
@@ -131,6 +161,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
+                        android:fontFamily="sans-serif-light"
                         android:text="@string/cc_sleep"
                         android:textColor="#FFFFFF"
                         android:textSize="14sp" />
@@ -161,6 +192,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
+                        android:fontFamily="sans-serif-light"
                         android:text="@string/cc_wifi"
                         android:textColor="#FFFFFF"
                         android:textSize="14sp" />
@@ -191,6 +223,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
+                        android:fontFamily="sans-serif-light"
                         android:text="@string/cc_bluetooth"
                         android:textColor="#FFFFFF"
                         android:textSize="14sp" />
@@ -220,18 +253,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="12dp"
+                    android:fontFamily="sans-serif-light"
                     android:text="@string/cc_search"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp" />
             </LinearLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/cc_hint"
-                android:textColor="#66FFFFFF"
-                android:textSize="12sp" />
         </LinearLayout>
     </FrameLayout>
 
@@ -257,9 +283,9 @@
             android:id="@+id/screensaverClock"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-thin"
             android:textColor="#FFFFFF"
             android:textSize="80sp"
-            android:textStyle="bold"
             android:shadowRadius="16"
             android:shadowColor="#66000000"
             android:shadowDy="0" />
@@ -269,6 +295,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:fontFamily="sans-serif-light"
             android:textColor="#CCFFFFFF"
             android:textSize="22sp" />
 
@@ -276,6 +303,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="28dp"
+            android:fontFamily="sans-serif-light"
             android:text="@string/made_in_pakistan"
             android:textColor="#55FFFFFF"
             android:textSize="12sp" />
