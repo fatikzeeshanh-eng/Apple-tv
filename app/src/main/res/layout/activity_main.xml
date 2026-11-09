@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121212"
+    android:padding="40dp">
+
+    <!-- Top Showcase Shelf (Apple TV Style Banner with Debloat Status) -->
+    <LinearLayout
+        android:id="@+id/topHeroSection"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:background="#1E1E1E"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/tvHeroTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/hero_title"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvHeroSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/hero_subtitle"
+            android:textColor="#AAAAAA"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- App Grid (Optimized for D-Pad Remote Navigation) -->
+    <GridView
+        android:id="@+id/appGridView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/topHeroSection"
+        android:layout_marginTop="30dp"
+        android:columnWidth="110dp"
+        android:numColumns="auto_fit"
+        android:horizontalSpacing="24dp"
+        android:verticalSpacing="24dp"
+        android:stretchMode="columnWidth"
+        android:gravity="center" />
+
+</RelativeLayout>
