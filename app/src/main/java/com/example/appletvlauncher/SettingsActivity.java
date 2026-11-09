@@ -48,6 +48,14 @@ public class SettingsActivity extends Activity {
             }
         });
 
+        // Home Screen Apps: choose which apps show on Home
+        findViewById(R.id.rowHomeApps).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(SettingsActivity.this, CustomizeHomeActivity.class));
+            }
+        });
+
         // Wi-Fi row -> open system Wi-Fi settings
         findViewById(R.id.rowWifi).setOnClickListener(new View.OnClickListener() {
             @Override
