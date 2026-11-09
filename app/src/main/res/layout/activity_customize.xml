@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/customizeRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#000000">
+
+    <TextView
+        android:id="@+id/customizeTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="48dp"
+        android:layout_marginTop="40dp"
+        android:fontFamily="sans-serif-light"
+        android:text="@string/customize_title"
+        android:textColor="#FFFFFF"
+        android:textSize="36sp" />
+
+    <TextView
+        android:id="@+id/customizeHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="48dp"
+        android:layout_marginTop="12dp"
+        android:fontFamily="sans-serif-light"
+        android:text="@string/customize_hint"
+        android:textColor="#88FFFFFF"
+        android:textSize="16sp" />
+
+    <ListView
+        android:id="@+id/customizeList"
+        android:layout_width="560dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginLeft="48dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="8dp"
+        android:divider="#1AFFFFFF"
+        android:dividerHeight="1dp" />
+
+    <TextView
+        android:id="@+id/customizeBackHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="48dp"
+        android:layout_marginTop="8dp"
+        android:fontFamily="sans-serif-light"
+        android:text="@string/customize_back_hint"
+        android:textColor="#55FFFFFF"
+        android:textSize="14sp" />
+
+    <!-- Footer credit -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="2dp"
+        android:paddingBottom="12dp"
+        android:text="@string/made_in_pakistan"
+        android:textColor="#44FFFFFF"
+        android:textSize="11sp" />
+
+</LinearLayout>
