@@ -11,7 +11,7 @@
         android:orientation="vertical"
         android:background="@drawable/ambient_backdrop">
 
-        <!-- Header: user avatar + wordmark + Apps/Input/Control Center buttons + clock -->
+        <!-- Header: avatar + wordmark + Apps/Add/Input/Control Center buttons + clock -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -49,7 +49,7 @@
                 android:textColor="#FFFFFF"
                 android:textSize="34sp" />
 
-            <!-- Right side: Apps + Input + Control Center buttons + clock -->
+            <!-- Right side: Apps + Add Apps + Input + Control Center + clock -->
             <LinearLayout
                 android:id="@+id/headerRight"
                 android:layout_width="wrap_content"
@@ -72,6 +72,23 @@
                     android:focusable="true"
                     android:fontFamily="sans-serif-light"
                     android:text="@string/btn_apps"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/addAppsButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="12dp"
+                    android:paddingLeft="18dp"
+                    android:paddingRight="18dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:background="@drawable/cc_button"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:fontFamily="sans-serif-light"
+                    android:text="@string/btn_add_apps"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp" />
 
