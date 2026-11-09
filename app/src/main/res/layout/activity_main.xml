@@ -1,45 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212"
-    android:padding="40dp">
+    android:orientation="vertical"
+    android:background="@drawable/background_gradient">
 
-    <!-- Top Showcase Shelf (Apple TV Style Banner with Debloat Status) -->
+    <!-- Top Tab Bar (tvOS style: Featured | Apps) -->
     <LinearLayout
-        android:id="@+id/topHeroSection"
+        android:id="@+id/tabBar"
         android:layout_width="match_parent"
-        android:layout_height="160dp"
-        android:background="#1E1E1E"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="48dp"
+        android:paddingRight="48dp">
 
         <TextView
-            android:id="@+id/tvHeroTitle"
+            android:id="@+id/tabFeatured"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/hero_title"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="@string/tab_featured"
             android:textColor="#FFFFFF"
-            android:textSize="26sp"
-            android:textStyle="bold" />
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:background="@drawable/tab_indicator"
+            android:clickable="true"
+            android:focusable="true" />
 
         <TextView
-            android:id="@+id/tvHeroSubtitle"
+            android:id="@+id/tabApps"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/hero_subtitle"
-            android:textColor="#AAAAAA"
-            android:textSize="14sp" />
+            android:layout_marginLeft="20dp"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="@string/tab_apps"
+            android:textColor="#88FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:background="@drawable/tab_indicator"
+            android:clickable="true"
+            android:focusable="true" />
     </LinearLayout>
 
-    <!-- App Grid (Optimized for D-Pad Remote Navigation) -->
+    <!-- Featured Shelf (big rounded cards with reflections, top 3 apps) -->
+    <LinearLayout
+        android:id="@+id/shelfSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <HorizontalScrollView
+            android:id="@+id/shelfScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingLeft="48dp"
+            android:paddingRight="48dp">
+
+            <LinearLayout
+                android:id="@+id/shelfRow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <!-- Section Header -->
+    <TextView
+        android:id="@+id/sectionApps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="48dp"
+        android:layout_marginTop="24dp"
+        android:text="@string/section_apps"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <!-- App Grid (D-pad remote navigation) -->
     <GridView
         android:id="@+id/appGridView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/topHeroSection"
-        android:layout_marginTop="30dp"
+        android:layout_marginLeft="48dp"
+        android:layout_marginRight="48dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="32dp"
         android:columnWidth="110dp"
         android:numColumns="auto_fit"
         android:horizontalSpacing="24dp"
@@ -47,4 +100,4 @@
         android:stretchMode="columnWidth"
         android:gravity="center" />
 
-</RelativeLayout>
+</LinearLayout>
