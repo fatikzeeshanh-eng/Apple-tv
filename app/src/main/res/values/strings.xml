@@ -4,6 +4,7 @@
     <string name="tab_apps">Apps</string>
     <string name="section_apps">Apps</string>
     <string name="shelf_empty">No apps installed</string>
+    <string name="made_in_pakistan">Made in Pakistan 🇵🇰 by an 11-year-old kid</string>
     <string name="hero_title">Apple TV Experience</string>
     <string name="hero_subtitle">KitKat Debloated Edition — Auto-Optimized on Launch</string>
 </resources>
