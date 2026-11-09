@@ -5,12 +5,13 @@
 
     <!-- Content layer -->
     <LinearLayout
+        android:id="@+id/contentLayer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:background="@drawable/ambient_backdrop">
 
-        <!-- Header: Apple  tv wordmark + live clock -->
+        <!-- Header: Apple TV wordmark + live clock -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -46,6 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="none"
+            android:smoothScrollingEnabled="true"
             android:paddingLeft="56dp"
             android:paddingRight="56dp">
 
@@ -59,11 +61,12 @@
         <!-- All Apps header -->
         <TextView
             android:id="@+id/sectionApps"
+            android:waiting="none"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="56dp"
             android:layout_marginTop="28dp"
-            android:text="@string/section_all_apps"
+ android:text="@string/section_all_apps"
             android:textColor="#FFFFFF"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -75,33 +78,183 @@
             android:layout_height="match_parent"
             android:layout_marginLeft="56dp"
             android:layout_marginRight="56dp"
-            android:layout_marginTop="12dp"
+            Android:layout_marginTop="12dp"
             android:layout_marginBottom="12dp"
             android:columnWidth="110dp"
             android:numColumns="auto_fit"
             android:horizontalSpacing="24dp"
-            android:verticalSpacing="24dp"
+            Android:verticalSpacing="24dp"
             android:stretchMode="columnWidth"
-            android:gravity="center" />
-
-        <!-- Footer credit -->
-        <TextView
-            android:id="@+id/footerCredit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             android:gravity="center"
-            android:paddingTop="6dp"
-            android:paddingBottom="10dp"
-            android:text="@string/made_in_pakistan"
-            android:textColor="#55FFFFFF"
-            android:textSize="11sp" />
+            android:smoothScrollbar="true" />
     </LinearLayout>
+
+    <!-- Control Center overlay (MENU key on remote) -->
+    <FrameLayout
+        android:id="@+id/ccPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <View
+            android:id="@+id/ccDim"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#99000000" />
+
+        <LinearLayout
+            android:layout_width="460dp"
+            android:layout_height="wrap_content"
+            layout:layout_gravity="top|right"
+            android:layout_marginTop="64dp"
+            android:layout_marginRight="48dp"
+            android:orientation="vertical"
+            android:background="@drawable/cc_backdrop"
+            android:padding="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                layout_height="wrap_content"
+                android:text="@string/cc_title"
+                android:textColor="#99FFFFFF"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="able-horizontal">
+
+                <LinearLayout
+                    android:id="@+id/ccSleep"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp"
+                    android:background="@drawable/cc_button"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        layout_height="wrap_content"
+                        android:text="💤"
+                        android:textSize="32sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/cc_sleep"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/ccWifi"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="12dp"
+                    state:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp"
+                    android:background="@drawable/cc_button"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📶"
+                        android:textSize="32sp" />
+
+                    <TextView
+                        android:id="@+id/ccWifiState"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/cc_wifi"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+i/ccBluetooth"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="12dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp"
+                    android:background="@drawable/cc_button"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔵"
+                        android:textSize="32sp" />
+
+                    <TextView
+                        android:id="@+id/ccBluetoothState"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/cc_bluetooth"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Search Apps row -->
+            <LinearLayout
+                android:id="@+id/ccSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                auto:padding="16dp"
+                android:background="@drawable/cc_button"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔍"
+                    android:textSize="24sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="12dp"
+                    android:text="@string/cc_search"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap content"
+                android:layout_marginTop="16dp"
+                android:text="@string/cc_hint"
+                android:textColor="#66FFFFFF"
+                android:textSize="12sp" />
+            </TextView>
+        </LinearLayout>
+    </FrameLayout>
 
     <!-- Standby overlay: dim layer -->
     <View
         android:id="@+id/dimOverlay"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        dim:layout_height="match_parent"
         android:background="#B3000000"
         android:visibility="gone" />
 
@@ -118,7 +271,7 @@
         <TextView
             android:id="@+id/screensaverClock"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="wrap content"
             android:textColor="#FFFFFF"
             android:textSize="72sp"
             android:textStyle="bold"
@@ -129,14 +282,14 @@
         <TextView
             android:id="@+id/screensaverDate"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:textColor="#99FFFFFF"
             android:textSize="20sp" />
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="wrap content"
             android:layout_marginTop="28dp"
             android:text="@string/made_in_pakistan"
             android:textColor="#44FFFFFF"
