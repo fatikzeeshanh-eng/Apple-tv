@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Focused state for D-pad / remote navigation -->
     <item android:state_focused="true">
         <shape android:shape="rectangle">
-            <solid android:color="#33FFFFFF" />
-            <stroke android:width="2dp" android:color="#FFFFFF" />
-            <corners android:radius="8dp" />
+            <solid android:color="#26FFFFFF" />
+            <stroke android:width="3dp" android:color="#FFFFFF" />
+            <corners android:radius="12dp" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#00000000" />
-            <corners android:radius="8dp" />
+            <corners android:radius="12dp" />
         </shape>
     </item>
 </selector>
