@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Content layer -->
+    <!-- Content layer: tvOS home screen -->
     <LinearLayout
         android:id="@+id/contentLayer"
         android:layout_width="match_parent"
@@ -15,9 +15,9 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingLeft="56dp"
-            android:paddingRight="56dp"
-            android:paddingTop="28dp"
+            android:paddingLeft="48dp"
+            android:paddingRight="48dp"
+            android:paddingTop="32dp"
             android:paddingBottom="12dp">
 
             <TextView
@@ -28,7 +28,7 @@
                 android:layout_centerVertical="true"
                 android:text="@string/tv_wordmark"
                 android:textColor="#FFFFFF"
-                android:textSize="30sp"
+                android:textSize="34sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -41,48 +41,20 @@
                 android:textSize="18sp" />
         </RelativeLayout>
 
-        <!-- Featured shelf: big glass cards -->
-        <HorizontalScrollView
-            android:id="@+id/shelfScroll"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:paddingLeft="56dp"
-            android:paddingRight="56dp">
-
-            <LinearLayout
-                android:id="@+id/shelfRow"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-        </HorizontalScrollView>
-
-        <!-- All Apps header -->
-        <TextView
-            android:id="@+id/sectionApps"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="56dp"
-            android:layout_marginTop="28dp"
-            android:text="@string/section_all_apps"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <!-- App grid -->
+        <!-- Full-screen tvOS tile grid -->
         <GridView
             android:id="@+id/appGridView"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginLeft="56dp"
-            android:layout_marginRight="56dp"
+            android:layout_marginLeft="48dp"
+            android:layout_marginRight="48dp"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="8dp"
-            android:columnWidth="110dp"
+            android:columnWidth="250dp"
             android:numColumns="auto_fit"
-            android:horizontalSpacing="24dp"
-            android:verticalSpacing="24dp"
+            android:horizontalSpacing="28dp"
+            android:verticalSpacing="28dp"
             android:stretchMode="columnWidth"
             android:gravity="center"
             android:smoothScrollbar="true" />
@@ -93,7 +65,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:paddingTop="6dp"
+            android:paddingTop="4dp"
             android:paddingBottom="10dp"
             android:text="@string/made_in_pakistan"
             android:textColor="#55FFFFFF"
