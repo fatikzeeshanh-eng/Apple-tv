@@ -2,15 +2,22 @@ package com.example.appletvlauncher;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * Remembers the user's screensaver timing choice across restarts.
- * API 19 safe — plain SharedPreferences, no dependencies.
+ * Remembers user choices across restarts.
+ * API 19 safe — plain SharedPreferences, no StringSet (unreliable on KitKat).
  */
 public final class LauncherPreferences {
 
     private static final String PREFS_NAME = "appletv_prefs";
     private static final String KEY_SAVER_OPTION = "saver_option_index";
+    private static final String KEY_HIDDEN_PACKAGES = "hidden_packages";
+    private static final String KEY_HOME_REVISION = "home_revision";
 
     private LauncherPreferences() {
         // no instances
@@ -34,5 +41,39 @@ public final class LauncherPreferences {
     public static long getSaverDelayMs(Context context) {
         long[] options = {120000L, 300000L, 600000L, 0L};
         return options[getSaverOption(context)];
+    }
+
+    /** Package names the user has unchecked — hidden from the Home grid. */
+    public static Set<String> getHiddenPackages(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String joined = prefs.getString(KEY_HIDDEN_PACKAGES, "");
+        Set<String> hidden = new HashSet<String>();
+        if (joined != null && joined.length() > 0) {
+            String[] parts = joined.split(",");
+            for (String p : parts) {
+                if (p != null && p.length() > 0) {
+                    hidden.add(p);
+                }
+            }
+        }
+        return hidden;
+    }
+
+    public static void setHiddenPackages(Context context, Set<String> hidden) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String joined = TextUtils.join(",", hidden);
+        prefs.edit().putString(KEY_HIDDEN_PACKAGES, joined).commit();
+    }
+
+    /** Bumped whenever the hidden app list changes, so Home knows to refresh. */
+    public static int getHomeRevision(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getInt(KEY_HOME_REVISION, 0);
+    }
+
+    public static void bumpHomeRevision(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        int rev = prefs.getInt(KEY_HOME_REVISION, 0) + 1;
+        prefs.edit().putInt(KEY_HOME_REVISION, rev).commit();
     }
 }
