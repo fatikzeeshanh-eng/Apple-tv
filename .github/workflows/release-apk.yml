@@ -1,0 +1,57 @@
+name: Release APK
+
+on:
+  push:
+    branches: [build-apk]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build and Release APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+- name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+- name: Set up Gradle 8.0
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.0'
+
+- name: Build release APK (debug-signed so it installs easily)
+        run: gradle --no-daemon assembleDebug
+
+- name: Rename APK
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk AppleTV-Launcher-v1.2.apk
+
+- name: Create GitHub Release with APK
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v1.2
+          name: AppleTV Launcher v1.2
+          body: |
+            🍏📺 AppleTV Launcher for Android 4.4 KitKat
+
+🇵🇰 **Made in Pakistan by an 11-year-old kid**
+
+### Install
+            1. Download `AppleTV-Launcher-v1.2.apk` below
+            2. Copy it to your Android 4.4 TV box
+            3. Install (allow Unknown sources)
+            4. Press Home and choose AppleTV Launcher
+
+No GitHub account needed to download. 💖
+          files: AppleTV-Launcher-v1.2.apk
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
