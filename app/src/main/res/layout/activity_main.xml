@@ -1,112 +1,177 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/background_gradient">
+    android:layout_height="match_parent">
 
-    <!-- Top Tab Bar (tvOS style: Featured | Apps) -->
-    <LinearLayout
-        android:id="@+id/tabBar"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingLeft="48dp"
-        android:paddingRight="48dp">
-
-        <TextView
-            android:id="@+id/tabFeatured"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
-            android:text="@string/tab_featured"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:background="@drawable/tab_indicator"
-            android:clickable="true"
-            android:focusable="true" />
-
-        <TextView
-            android:id="@+id/tabApps"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
-            android:text="@string/tab_apps"
-            android:textColor="#88FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:background="@drawable/tab_indicator"
-            android:clickable="true"
-            android:focusable="true" />
-    </LinearLayout>
-
-    <!-- Featured Shelf (big rounded cards with reflections, top 3 apps) -->
-    <HorizontalScrollView
-        android:id="@+id/shelfScroll"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/tabBar"
-        android:scrollbars="none"
-        android:paddingLeft="48dp"
-        android:paddingRight="48dp">
-
-        <LinearLayout
-            android:id="@+id/shelfRow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal" />
-    </HorizontalScrollView>
-
-    <!-- Section Header -->
-    <TextView
-        android:id="@+id/sectionApps"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/shelfScroll"
-        android:layout_marginLeft="48dp"
-        android:layout_marginTop="24dp"
-        android:text="@string/section_apps"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:textStyle="bold" />
-
-    <!-- App Grid (D-pad remote navigation) -->
-    <GridView
-        android:id="@+id/appGridView"
+    <!-- Blurred app-icon backdrop (filled from code, like tvOS poster) -->
+    <ImageView
+        android:id="@+id/heroBackdrop"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/sectionApps"
-        android:layout_marginLeft="48dp"
-        android:layout_marginRight="48dp"
-        android:layout_marginTop="16dp"
-        android:layout_above="@id/footerCredit"
-        android:layout_marginBottom="8dp"
-        android:columnWidth="110dp"
-        android:numColumns="auto_fit"
-        android:horizontalSpacing="24dp"
-        android:verticalSpacing="24dp"
-        android:stretchMode="columnWidth"
-        android:gravity="center" />
+        android:scaleType="centerCrop"
+        android:contentDescription="@null" />
 
-    <!-- Footer credit -->
-    <TextView
-        android:id="@+id/footerCredit"
+    <!-- Dark scrim so text stays readable over backdrop -->
+    <View
+        android:id="@+id/heroScrim"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:gravity="center"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:text="@string/made_in_pakistan"
-        android:textColor="#66FFFFFF"
-        android:textSize="12sp" />
+        android:layout_height="match_parent"
+        android:background="@drawable/scrim_overlay" />
 
-</RelativeLayout>
+    <!-- Main content column -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Top Tab Bar with live clock (tvOS style) -->
+        <LinearLayout
+            android:id="@+id/tabBar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="48dp"
+            android:paddingRight="48dp">
+
+            <TextView
+                android:id="@+id/tabFeatured"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:text="@string/tab_featured"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:background="@drawable/tab_indicator"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/tabApps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:text="@string/tab_apps"
+                android:textColor="#88FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:background="@drawable/tab_indicator"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/topClock"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="right|center_vertical"
+                android:textColor="#AAFFFFFF"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <!-- Hero section: giant featured app title over the blurred backdrop -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="48dp"
+            android:paddingRight="48dp"
+            android:paddingTop="28dp">
+
+            <TextView
+                android:id="@+id/heroEyebrow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/hero_eyebrow"
+                android:textAllCaps="true"
+                android:textColor="#99FFFFFF"
+                android:textSize="14sp"
+                android:letterSpacing="0.2" />
+
+            <TextView
+                android:id="@+id/heroTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="#FFFFFF"
+                android:textSize="44sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/heroOpen"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/hero_open"
+                android:textColor="#88FFFFFF"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <!-- Featured Shelf (large glass cards) -->
+        <HorizontalScrollView
+            android:id="@+id/shelfScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingLeft="48dp"
+            android:paddingRight="48dp"
+            android:layout_marginTop="20dp">
+
+            <LinearLayout
+                android:id="@+id/shelfRow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <!-- Section Header -->
+        <TextView
+            android:id="@+id/sectionApps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="48dp"
+            android:layout_marginTop="24dp"
+            android:text="@string/section_apps"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- App Grid (D-pad remote navigation) -->
+        <GridView
+            android:id="@+id/appGridView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginLeft="48dp"
+            android:layout_marginRight="48dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"
+            android:columnWidth="116dp"
+            android:numColumns="auto_fit"
+            android:horizontalSpacing="24dp"
+            android:verticalSpacing="24dp"
+            android:stretchMode="columnWidth"
+            android:gravity="center" />
+
+        <!-- Footer credit -->
+        <TextView
+            android:id="@+id/footerCredit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="@string/made_in_pakistan"
+            android:textColor="#66FFFFFF"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+</FrameLayout>
