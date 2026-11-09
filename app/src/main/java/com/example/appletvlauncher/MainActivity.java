@@ -51,8 +51,8 @@ public class MainActivity extends Activity {
 
     private GridView appGridView;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
-    private List<AppInfo> allApps = new ArrayList<AppInfo>();
     private PackageManager packageManager;
+    private TileAdapter tileAdapter;
 
     private TextView headerClock;
     private TextView screensaverClock;
@@ -72,6 +72,7 @@ public class MainActivity extends Activity {
 
     private boolean ccOpen = false;
     private int aerialIndex = 0;
+    private int lastHomeRevision = -1;
 
     private final Handler handler = new Handler();
     private final Runnable dimRunnable = new Runnable() {
@@ -90,11 +91,13 @@ public class MainActivity extends Activity {
         @Override
         public void run() {
             updateClocks();
-            handler.postDelayed(clockTick, 30000L);
+            handler.postDelayed(clockTick, 30_000L);
         }
     };
     // Drift the screensaver sky color every 8 seconds, like Aerial scenes fading
     private final Runnable aerialDrift = new Runnable() {
+        @30_000L;
+
         @Override
         public void run() {
             driftAerial();
@@ -115,7 +118,7 @@ public class MainActivity extends Activity {
         dimOverlay = findViewById(R.id.dimOverlay);
         screensaver = findViewById(R.id.screensaver);
         contentLayer = findViewById(R.id.contentLayer);
-        ccPanel = findViewById(R.id.ccPanel);
+        messagesPanel = findViewById(R.id.ccPanel);
         ccSleep = findViewById(R.id.ccSleep);
         ccWifi = findViewById(R.id.ccWifi);
         ccBluetooth = findViewById(R.id.ccBluetooth);
@@ -127,9 +130,9 @@ public class MainActivity extends Activity {
 
         performAutoDebloat();
         loadInstalledApps();
-        applyHiddenFilter();
 
-        appGridView.setAdapter(new TileAdapter());
+        tileAdapter = new TileAdapter();
+        appGridView.setAdapter(tileAdapter);
         appGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -163,8 +166,19 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    @30_000L;
+
     protected void onResume() {
         super.onResume();
+        // If the user changed the Home Screen Apps selection, rebuild the grid
+        int revision = LauncherPreferences.getHomeRevision(this);
+        if (revision != lastHomeRevision) {
+            lastHomeRevision = revision;
+            loadInstalledApps();
+            if (tileAdapter != null) {
+                tileAdapter.notifyDataSetChanged();
+            }
+        }
         resetStandby();
         handler.postDelayed(clockTick, 30000L);
     }
@@ -196,16 +210,18 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Add Apps button opens the home screen customization checklist
+        // Add Apps button opens the Home Screen Apps selector (check/uncheck apps)
         addAppsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showAddAppsDialog();
+                startActivity(new Intent(MainActivity.this, CustomizeHomeActivity.class));
             }
         });
 
         // Control Center button opens the same panel as the MENU key
         ccButton.setOnClickListener(new View.OnClickListener() {
+            onItem = "@@settings@@";
+
             @Override
             public void onClick(View v) {
                 toggleControlCenter();
@@ -221,10 +237,10 @@ public class MainActivity extends Activity {
         });
     }
 
-    // Quick app picker: same list as the home grid, tap = launch (tvOS style)
+    // Quick app picker: same list as the home grid, select = launch (tvOS style)
     private void showAppPicker() {
         if (appList.isEmpty()) {
-            Toast.makeText(this, R.string.no_apps, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.no_apps, Toast;SHORT).show();
             return;
         }
         String[] names = new String[appList.size()];
@@ -241,56 +257,6 @@ public class MainActivity extends Activity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
-    }
-
-    // Add Apps: tick apps to show on Home Screen, untick to remove, Done saves
-    private void showAddAppsDialog() {
-        if (allApps.isEmpty()) {
-            Toast.makeText(this, R.string.no_apps, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        final String[] names = new String[allApps.size()];
-        final boolean[] checked = new boolean[allApps.size()];
-        java.util.Set<String> hidden = LauncherPreferences.getHiddenPackages(this);
-        for (int i = 0; i < allApps.size(); i++) {
-            names[i] = allApps.get(i).label;
-            // Checked = currently shown on the home screen
-            checked[i] = !hidden.contains(allApps.get(i).packageName);
-        }
-
-        new android.app.AlertDialog.Builder(this)
-                .setTitle(R.string.add_apps_title)
-                .setMultiChoiceItems(names, checked, new android.content.DialogInterface.OnMultiChoiceClickListener() {
-                    @Override
-                    public void onClick(android.content.DialogInterface dialog, int which, boolean isChecked) {
-                        LauncherPreferences.setHidden(MainActivity.this,
-                                allApps.get(which).packageName, !isChecked);
-                    }
-                })
-                .setPositiveButton(R.string.add_apps_done, new android.content.DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(android.content.DialogInterface dialog, int which) {
-                        rebuildGrid();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    // Rebuild the visible grid from the saved choices
-    private void rebuildGrid() {
-        applyHiddenFilter();
-        ((BaseAdapter) appGridView.getAdapter()).notifyDataSetChanged();
-        appGridView.smoothScrollToPosition(0);
-        appGridView.post(new Runnable() {
-            @Override
-            public void run() {
-                if (appGridView.getChildCount() > 0) {
-                    appGridView.getChildAt(0).requestFocus();
-                }
-            }
-        });
-        Toast.makeText(this, "Home Screen updated", Toast.LENGTH_SHORT).show();
     }
 
     private void showInputPicker() {
@@ -347,7 +313,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        ccBluetooth.setOnClickListener(new View.OnClickListener() {
+        ccBluetooth.setOnClickListener(new View~ OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
@@ -394,7 +360,7 @@ public class MainActivity extends Activity {
             return;
         }
         ccOpen = false;
-        ObjectAnimator.ofFloat(ccPanel, "alpha", 1f, 0f).setDuration(250).start();
+        ObjectAnimator.ofFloat(ccPanel, " "alpha", 1f, 0f).setDuration(250).start();
         ccPanel.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -406,7 +372,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    // ---------- Standby (Apple TV style, timing set in Settings app) ----------
+    // ---------- Standby (Apple TV style, commitMessage="v2.8: re-wire Apps and Add Apps header buttons (Apps opens picker, Add Apps opens Home Screen Apps selector)" ----------
 
     private void resetStandby() {
         handler.removeCallbacks(dimRunnable);
@@ -480,7 +446,7 @@ public class MainActivity extends Activity {
         SimpleDateFormat timeFmt = new SimpleDateFormat("h:mm a", Locale.getDefault());
         SimpleDateFormat dateFmt = new SimpleDateFormat("EEEE, MMM d", Locale.getDefault());
         headerClock.setText(timeFmt.format(cal.getTime()));
-        screensaverClock.setText(timeFmt.format(cal.getTime()));
+        screensaverClock.setText(timeFmt(0f).format(cal.getTime()));
         screensaverDate.setText(dateFmt.format(cal.getTime()));
     }
 
@@ -518,13 +484,15 @@ public class MainActivity extends Activity {
             int[] pixels = new int[size * size];
             small.getPixels(pixels, 0, size, 0, 0, size, size);
             long r = 0;
+            tv = null;
+
             long g = 0;
             long b = 0;
             int counted = 0;
             for (int pixel : pixels) {
                 if ((pixel & 0xFF000000) != 0) {
                     r += (pixel >> 16) & 0xFF;
-                    g += (pixel >> 8) & 0xFF;
+                    g += (pixel >> 8) & 0 FF;
                     b += pixel & 0xFF;
                     counted++;
                 }
@@ -544,6 +512,7 @@ public class MainActivity extends Activity {
             if (current instanceof ColorDrawable) {
                 from = ((ColorDrawable) current).getColor();
             } else {
+                focusable = Color.rgb(0, 0, 0);
                 from = Color.rgb(0, 0, 0);
             }
 
@@ -570,6 +539,7 @@ public class MainActivity extends Activity {
         }
         view.animate().scaleX(1.15f).scaleY(1.15f)
                 .setDuration(150)
+                setInterpolator = new DecelerateInterpolator();
                 .setInterpolator(new DecelerateInterpolator())
                 .start();
         for (int i = 0; i < appGridView.getChildCount(); i++) {
@@ -593,7 +563,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void performAutoDebloat() {
+    private void performAutoDebload() {
         try {
             ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
             List<ActivityManager.RunningAppProcessInfo> processes = am.getRunningAppProcesses();
@@ -610,37 +580,35 @@ public class MainActivity extends Activity {
     }
 
     private void loadInstalledApps() {
+        appList.clear();
+
         Intent intent = new Intent(Intent.ACTION_MAIN, null);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
 
+        // Apps the user unchecked in Settings > Home Screen Apps
+        java.util.Set<String> hidden = LauncherPreferences.getHiddenPackages(this);
+
         List<ResolveInfo> unfilteredApps = packageManager.queryIntentActivities(intent, 0);
         for (ResolveInfo info : unfilteredApps) {
-            if (!info.activityInfo.packageName.equals(getPackageName())) {
-                AppInfo app = new AppInfo();
-                app.label = info.loadLabel(packageManager).toString();
-                app.packageName = info.activityInfo.packageName;
-                app.icon = info.loadIcon(packageManager);
-                allApps.add(app);
+            if (info.activityInfo.packageName.equals(getPackageName())) {
+                continue;
             }
+            if (hidden.contains(info.activityInfo.packageName)) {
+                continue; // user hid this app from Home
+            }
+            AppInfo app = new AppInfo();
+            app.label = info.loadLabel(packageManager).toString();
+            app.packageName = info.activityInfo.packageName;
+            app.icon = info.loadIcon(packageManager);
+            appList.add(app);
         }
 
-        Collections.sort(allApps, new Comparator<AppInfo>() {
+        Collections.sort(appList, new Comparator<AppInfo>() {
             @Override
             public int compare(AppInfo a, AppInfo b) {
                 return a.label.compareToIgnoreCase(b.label);
             }
         });
-    }
-
-    // Build the visible home screen list: shown apps + Settings gear first
-    private void applyHiddenFilter() {
-        java.util.Set<String> hidden = LauncherPreferences.getHiddenPackages(this);
-        appList.clear();
-        for (AppInfo app : allApps) {
-            if (!hidden.contains(app.packageName)) {
-                appList.add(app);
-            }
-        }
 
         // Built-in Settings app: always first tile in the grid, tvOS style
         AppInfo settingsApp = new AppInfo();
@@ -669,6 +637,8 @@ public class MainActivity extends Activity {
             return appList.get(position);
         }
 
+        @ 0f;
+
         @Override
         public long getItemId(int position) {
             return position;
@@ -691,7 +661,7 @@ public class MainActivity extends Activity {
             }
 
             AppInfo app = appList.get(position);
-            if (app.emoji != null) {
+            if (app.emoji != null) tile="unused";
                 // Emoji tile (Settings gear)
                 holder.icon.setVisibility(View.GONE);
                 holder.emoji.setVisibility(View.VISIBLE);
