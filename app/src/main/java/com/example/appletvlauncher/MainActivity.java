@@ -453,7 +453,6 @@ public class MainActivity extends Activity {
                     }
                 }
             }
-            Toast.makeText(this, "TV Debloated: RAM Cleared & Optimized", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -485,7 +484,8 @@ public class MainActivity extends Activity {
         AppInfo settingsApp = new AppInfo();
         settingsApp.label = getString(R.string.settings_title);
         settingsApp.packageName = SETTINGS_PACKAGE;
-        settingsApp.icon = getResources().getDrawable(R.drawable.ic_launcher);
+        settingsApp.icon = null;
+        settingsApp.emoji = "⚙️";
         appList.add(0, settingsApp);
     }
 
@@ -493,6 +493,7 @@ public class MainActivity extends Activity {
         String label;
         String packageName;
         Drawable icon;
+        String emoji;
     }
 
     private class TileAdapter extends BaseAdapter {
@@ -520,6 +521,7 @@ public class MainActivity extends Activity {
                 row = getLayoutInflater().inflate(R.layout.tile_item, parent, false);
                 holder = new Holder();
                 holder.icon = (ImageView) row.findViewById(R.id.tileIcon);
+                holder.emoji = (TextView) row.findViewById(R.id.tileEmoji);
                 holder.label = (TextView) row.findViewById(R.id.tileLabel);
                 row.setTag(holder);
             } else {
@@ -527,13 +529,23 @@ public class MainActivity extends Activity {
             }
 
             AppInfo app = appList.get(position);
-            holder.icon.setImageDrawable(app.icon);
+            if (app.emoji != null) {
+                // Emoji tile (Settings gear)
+                holder.icon.setVisibility(View.GONE);
+                holder.emoji.setVisibility(View.VISIBLE);
+                holder.emoji.setText(app.emoji);
+            } else {
+                holder.icon.setVisibility(View.VISIBLE);
+                holder.emoji.setVisibility(View.GONE);
+                holder.icon.setImageDrawable(app.icon);
+            }
             holder.label.setText(app.label);
             return row;
         }
 
         class Holder {
             ImageView icon;
+            TextView emoji;
             TextView label;
         }
     }
