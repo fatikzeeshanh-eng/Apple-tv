@@ -5,9 +5,21 @@ import android.app.ActivityManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.renderscript.Allocation;
+import android.renderscript.Element;
+import android.renderscript.RenderScript;
+import android.renderscript.ScriptIntrinsicBlur;
+import android.text.format.DateFormat;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.ScaleAnimation;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
@@ -19,9 +31,14 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends Activity {
+
+    private static final long CLOCK_TICK_MS = 30000L; // 30s
+    private static final long DIM_AFTER_MS = 60000L;   // 1 min idle -> dim
+    private static final long CLOCK_SAVE_AFTER_MS = 300000L; // 5 min idle -> clock screensaver
 
     private GridView appGridView;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
@@ -30,6 +47,14 @@ public class MainActivity extends Activity {
     private LinearLayout shelfRow;
     private TextView tabFeatured;
     private TextView tabApps;
+    private TextView heroTitle;
+    private TextView topClock;
+    private ImageView heroBackdrop;
+
+    private RenderScript renderScript;
+    private Handler handler;
+    private long lastInteractionTime;
+    private boolean dimmed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,10 +66,15 @@ public class MainActivity extends Activity {
         shelfRow = (LinearLayout) findViewById(R.id.shelfRow);
         tabFeatured = (TextView) findViewById(R.id.tabFeatured);
         tabApps = (TextView) findViewById(R.id.tabApps);
+        heroTitle = (TextView) findViewById(R.id.heroTitle);
+        topClock = (TextView) findViewById(R.id.topClock);
+        heroBackdrop = (ImageView) findViewById(R.id.heroBackdrop);
 
-        // Automatically debloat / clear background RAM clutter upon opening the launcher
+        renderScript = RenderScript.create(this);
+        handler = new Handler();
+        lastInteractionTime = System.currentTimeMillis();
+
         performAutoDebloat();
-
         loadInstalledApps();
 
         AppAdapter adapter = new AppAdapter();
@@ -58,9 +88,107 @@ public class MainActivity extends Activity {
         });
 
         buildShelf();
-
         setupTabs();
+        startClock();
+        startIdleWatcher();
     }
+
+    // ---------- Hero backdrop (blurred featured icon, tvOS style) ----------
+
+    private void showHeroBackdrop(AppInfo app) {
+        if (app == null || app.icon == null) return;
+        try {
+            Bitmap src = drawableToBitmap(app.icon);
+            Bitmap blurred = blurBitmap(src, 25f);
+            heroBackdrop.setImageBitmap(blurred);
+            heroTitle.setText(app.label);
+        } catch (Throwable t) {
+            heroBackdrop.setImageDrawable(app.icon);
+            heroTitle.setText(app.label);
+        }
+    }
+
+    private Bitmap drawableToBitmap(Drawable d) {
+        if (d instanceof BitmapDrawable) {
+            Bitmap bm = ((BitmapDrawable) d).getBitmap();
+            if (bm != null) return bm;
+        }
+        int w = Math.max(2, d.getIntrinsicWidth());
+        int h = Math.max(2, d.getIntrinsicHeight());
+        Bitmap out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(out);
+        d.setBounds(0, 0, c.getWidth(), c.getHeight());
+        d.draw(c);
+        return out;
+    }
+
+    private Bitmap blurBitmap(Bitmap src, float radius) {
+        Bitmap out = Bitmap.createScaledBitmap(src, 64, 64, true);
+        Allocation in = Allocation.createFromBitmap(renderScript, out);
+        Allocation res = Allocation.createTyped(renderScript, in.getType());
+        ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(renderScript, Element.U8_4(renderScript));
+        script.setRadius(radius);
+        script.setInput(in);
+        script.forEach(res);
+        res.copyTo(out);
+        return out;
+    }
+
+    // ---------- Live clock (tvOS top-right clock) ----------
+
+    private void startClock() {
+        topClock.setText(DateFormat.getTimeFormat(this).format(new Date()));
+        handler.postDelayed(clockTick, CLOCK_TICK_MS);
+    }
+
+    private Runnable clockTick = new Runnable() {
+        @Override
+        public void run() {
+            topClock.setText(DateFormat.getTimeFormat(this) == null ? null
+                    : android.text.format.DateFormat.getTimeFormat(MainActivity.this).format(new Date()));
+            handler.postDelayed(this, CLOCK_TICK_MS);
+        }
+    };
+
+    // ---------- Idle dim + clock screensaver (Apple TV standby) ----------
+
+    private void startIdleWatcher() {
+        handler.postDelayed(idleCheck, 5000);
+    }
+
+    private Runnable idleCheck = new Runnable() {
+        @Override
+        public void run() {
+            long idle = System.currentTimeMillis() - lastInteractionTime;
+            if (!dimmed && idle >= DIM_AFTER_MS) {
+                dimmed = true;
+                View root = getWindow().getDecorView();
+                root.animate() != null ? root.animate().alpha(0.15f) : null;
+            }
+            if (idle >= CLOCK_SAVE_AFTER_MS) {
+                getWindow().getDecorView().setAlpha(0.15f);
+                topClock.setTextSize(72);
+                topClock.setTextColor(0xFFFFFFFF);
+                // Full clock screensaver mode: giant time, dim UI
+            }
+            handler.postDelayed(this, 5000);
+        }
+    };
+
+    @Override
+    public void onUserInteraction() {
+        super.onUserInteraction();
+        lastInteractionTime = System.currentTimeMillis();
+        if (dimmed) {
+            dimmed = false;
+            View root = getWindow().getDecorView();
+            root.animate().alpha(1f);
+            topClock.setTextSize(16);
+            topClock.setTextColor(0xAAFFFFFF);
+        }
+    }
+
+    // ---------- Tabs, shelf, grid ----------
 
     private void launchApp(AppInfo app) {
         Intent intent = packageManager.getLaunchIntentForPackage(app.packageName);
@@ -69,7 +197,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    // Tabs move focus into the shelf / grid — tvOS feel on one screen
     private void setupTabs() {
         tabFeatured.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -85,18 +212,15 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 setTabSelection(false);
-                if (appGridView.getChildCount() > 0 && appGridView.getChildAt(0) != null) {
+                appGridView.setSelection(0);
+                if (appGridView.getChildCount() > 0) {
                     appGridView.getChildAt(0).requestFocus();
                 }
-                appGridView.setSelection(0);
             }
         });
 
-        // Start in Featured, like Apple TV
         setTabSelection(true);
-        if (appGridView.getChildCount() > 0) {
-            appGridView.setSelection(0);
-        }
+        appGridView.setSelection(0);
     }
 
     private void setTabSelection(boolean featuredSelected) {
@@ -106,7 +230,7 @@ public class MainActivity extends Activity {
         tabApps.setTextColor(featuredSelected ? 0x88FFFFFF : 0xFFFFFFFF);
     }
 
-    // Featured shelf: first three apps as large glass cards with reflections
+    // Featured shelf: first three apps as large glass cards
     private void buildShelf() {
         shelfRow.removeAllViews();
         int count = Math.min(3, appList.size());
@@ -115,16 +239,13 @@ public class MainActivity extends Activity {
             View card = getLayoutInflater().inflate(R.layout.shelf_item, shelfRow, false);
 
             ImageView icon = (ImageView) card.findViewById(R.id.shelfIcon);
-            ImageView reflection = (ImageView) card.findViewById(R.id.shelfIconReflection);
             TextView label = (TextView) card.findViewById(R.id.shelfLabel);
-
             icon.setImageDrawable(app.icon);
-            reflection.setImageDrawable(app.icon);
             label.setText(app.label);
 
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            lp.rightMargin = 28;
+            lp.rightMargin = 32;
             card.setLayoutParams(lp);
             card.setFocusable(true);
             card.setClickable(true);
@@ -134,11 +255,19 @@ public class MainActivity extends Activity {
                     launchApp(app);
                 }
             });
+            card.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                @Override
+                public void onFocusChange(View v, boolean hasFocus) {
+                    zoomOnFocus(v, hasFocus);
+                    if (hasFocus) {
+                        showHeroBackdrop(app);
+                    }
+                }
+            });
 
             shelfRow.addView(card);
         }
 
-        // Empty state hint when no apps are installed
         if (count == 0) {
             TextView empty = new TextView(this);
             empty.setText(R.string.shelf_empty);
@@ -147,11 +276,25 @@ public class MainActivity extends Activity {
             empty.setPadding(48, 24, 48, 24);
             shelfRow.addView(empty);
         }
+
+        // Initial backdrop from first featured app
+        if (appList.size() > 0) {
+            showHeroBackdrop(appList.get(0));
+        }
+    }
+
+    // tvOS-style focus zoom
+    private void zoomOnFocus(View v, boolean hasFocus) {
+        float target = hasFocus ? 1.08f : 1.0f;
+        ScaleAnimation zoom = new ScaleAnimation(1f, target, 1f, target,
+                ScaleAnimation.RELATIVE_TO_SELF, 0.5f, ScaleAnimation.RELATIVE_TO_SELF, 0.5f);
+        zoom.setDuration(150);
+        zoom.setFillAfter(true);
+        v.startAnimation(zoom);
     }
 
     private void performAutoDebloat() {
         try {
-            // Kill background processes to free up RAM on resource-constrained Android 4.4 TV boxes
             ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
             List<ActivityManager.RunningAppProcessInfo> processes = am.getRunningAppProcesses();
             if (processes != null) {
@@ -173,7 +316,6 @@ public class MainActivity extends Activity {
 
         List<ResolveInfo> unfilteredApps = packageManager.queryIntentActivities(intent, 0);
         for (ResolveInfo info : unfilteredApps) {
-            // Filter out self to keep launcher list clean
             if (!info.activityInfo.packageName.equals(getPackageName())) {
                 AppInfo app = new AppInfo();
                 app.label = info.loadLabel(packageManager).toString();
@@ -183,7 +325,6 @@ public class MainActivity extends Activity {
             }
         }
 
-        // Alphabetical order like Apple TV
         Collections.sort(appList, new Comparator<AppInfo>() {
             @Override
             public int compare(AppInfo a, AppInfo b) {
@@ -225,6 +366,12 @@ public class MainActivity extends Activity {
                 holder.icon = (ImageView) row.findViewById(R.id.appIcon);
                 holder.label = (TextView) row.findViewById(R.id.appLabel);
                 row.setTag(holder);
+                row.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                    @Override
+                    public void onFocusChange(View v, boolean hasFocus) {
+                        zoomOnFocus(v, hasFocus);
+                    }
+                });
             } else {
                 holder = (Holder) row.getTag();
             }
@@ -244,5 +391,14 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
         // Prevent exiting home screen via remote back button
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacksAndMessages(null);
+        if (renderScript != null) {
+            renderScript.destroy();
+        }
     }
 }
