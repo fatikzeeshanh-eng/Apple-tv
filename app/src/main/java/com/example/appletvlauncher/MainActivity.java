@@ -49,9 +49,6 @@ public class MainActivity extends Activity {
     // Special entry: built-in tvOS-style Settings app shown as a gear tile
     private static final String SETTINGS_PACKAGE = "@@settings@@";
 
-    // Input list shown in the tvOS-style picker (KitKat boxes switch via their own hardware)
-    private static final String[] INPUT_LIST = {"HDMI 1", "HDMI 2", "AV 1", "AV 2", "TV"};
-
     private GridView appGridView;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
     private PackageManager packageManager;
@@ -203,15 +200,31 @@ public class MainActivity extends Activity {
     }
 
     private void showInputPicker() {
+        // KitKat boxes have no TV input framework, so we show the standard
+        // tvOS-style input list. Cheap boxes switch inputs via their own
+        // hardware/remote, so we try the display settings and show a hint.
+        final String[] inputs = {"HDMI 1", "HDMI 2", "AV 1", "AV 2", "TV"};
+
         new android.app.AlertDialog.Builder(this)
                 .setTitle(R.string.input_title)
-                .setItems(INPUT_LIST, new android.content.DialogInterface.OnClickListener() {
+                .setItems(inputs, new android.content.DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(android.content.DialogInterface dialog, int which) {
-                        // KitKat boxes switch inputs through their own hardware;
-                        // the launcher shows the choice and points to the Source key
-                        Toast.makeText(MainActivity.this, INPUT_LIST[which] + " — "
-                                + getString(R.string.input_fallback_hint), Toast.LENGTH_LONG).show();
+                        String chosen = inputs[which];
+                        boolean opened = false;
+                        // Some boxes expose a source/input settings screen
+                        try {
+                            Intent displaySettings = new Intent(Settings.ACTION_DISPLAY_SETTINGS);
+                            startActivity(displaySettings);
+                            opened = true;
+                        } catch (Exception e) {
+                            opened = false;
+                        }
+                        if (opened) {
+                            Toast.makeText(MainActivity.this, chosen + " " + getString(R.string.input_selected), Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, getString(R.string.input_fallback_hint), Toast.LENGTH_LONG).show();
+                        }
                     }
                 })
                 .setNegativeButton("Cancel", null)
