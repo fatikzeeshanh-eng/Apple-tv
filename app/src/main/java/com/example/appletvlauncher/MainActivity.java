@@ -66,6 +66,7 @@ public class MainActivity extends Activity {
     private View ccSearch;
     private View inputButton;
     private View ccButton;
+    private View appsButton;
 
     private boolean ccOpen = false;
     private int aerialIndex = 0;
@@ -119,6 +120,7 @@ public class MainActivity extends Activity {
         ccSearch = findViewById(R.id.ccSearch);
         inputButton = findViewById(R.id.inputButton);
         ccButton = findViewById(R.id.ccButton);
+        appsButton = findViewById(R.id.appsButton);
 
         performAutoDebloat();
         loadInstalledApps();
@@ -179,9 +181,17 @@ public class MainActivity extends Activity {
         resetStandby();
     }
 
-    // ---------- Header buttons: Input + Control Center ----------
+    // ---------- Header buttons: Apps + Input + Control Center ----------
 
     private void setupHeaderButtons() {
+        // Apps button opens a quick picker of every installed app
+        appsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showAppPicker();
+            }
+        });
+
         // Control Center button opens the same panel as the MENU key
         ccButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -197,6 +207,28 @@ public class MainActivity extends Activity {
                 showInputPicker();
             }
         });
+    }
+
+    // Quick app picker: same list as the home grid, tap = launch (tvOS style)
+    private void showAppPicker() {
+        if (appList.isEmpty()) {
+            Toast.makeText(this, R.string.no_apps, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String[] names = new String[appList.size()];
+        for (int i = 0; i < appList.size(); i++) {
+            names[i] = appList.get(i).label;
+        }
+        new android.app.AlertDialog.Builder(this)
+                .setTitle(R.string.btn_apps)
+                .setItems(names, new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface dialog, int which) {
+                        launchApp(appList.get(which));
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void showInputPicker() {
