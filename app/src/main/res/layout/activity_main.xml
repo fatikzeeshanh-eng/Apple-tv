@@ -3,127 +3,51 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Blurred app-icon backdrop (filled from code, like tvOS poster) -->
-    <ImageView
-        android:id="@+id/heroBackdrop"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:contentDescription="@null" />
-
-    <!-- Dark scrim so text stays readable over backdrop -->
-    <View
-        android:id="@+id/heroScrim"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/scrim_overlay" />
-
-    <!-- Main content column -->
+    <!-- Content layer -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:background="@drawable/ambient_backdrop">
 
-        <!-- Top Tab Bar with live clock (tvOS style) -->
-        <LinearLayout
-            android:id="@+id/tabBar"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingLeft="48dp"
-            android:paddingRight="48dp">
-
-            <TextView
-                android:id="@+id/tabFeatured"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                android:text="@string/tab_featured"
-                android:textColor="#FFFFFF"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:background="@drawable/tab_indicator"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/tabApps"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                android:text="@string/tab_apps"
-                android:textColor="#88FFFFFF"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:background="@drawable/tab_indicator"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/topClock"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="right|center_vertical"
-                android:textColor="#AAFFFFFF"
-                android:textSize="16sp" />
-        </LinearLayout>
-
-        <!-- Hero section: giant featured app title over the blurred backdrop -->
-        <LinearLayout
+        <!-- Header: Apple  tv wordmark + live clock -->
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingLeft="48dp"
-            android:paddingRight="48dp"
-            android:paddingTop="28dp">
+            android:paddingLeft="56dp"
+            android:paddingRight="56dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="12dp">
 
             <TextView
-                android:id="@+id/heroEyebrow"
+                android:id="@+id/tvWordmark"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/hero_eyebrow"
-                android:textAllCaps="true"
-                android:textColor="#99FFFFFF"
-                android:textSize="14sp"
-                android:letterSpacing="0.2" />
-
-            <TextView
-                android:id="@+id/heroTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:text="@string/tv_wordmark"
                 android:textColor="#FFFFFF"
-                android:textSize="44sp"
+                android:textSize="30sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/heroOpen"
+                android:id="@+id/headerClock"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="@string/hero_open"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
                 android:textColor="#88FFFFFF"
-                android:textSize="16sp" />
-        </LinearLayout>
+                android:textSize="18sp" />
+        </RelativeLayout>
 
-        <!-- Featured Shelf (large glass cards) -->
+        <!-- Featured shelf: big glass cards -->
         <HorizontalScrollView
             android:id="@+id/shelfScroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="none"
-            android:paddingLeft="48dp"
-            android:paddingRight="48dp"
-            android:layout_marginTop="20dp">
+            android:paddingLeft="56dp"
+            android:paddingRight="56dp">
 
             <LinearLayout
                 android:id="@+id/shelfRow"
@@ -132,29 +56,28 @@
                 android:orientation="horizontal" />
         </HorizontalScrollView>
 
-        <!-- Section Header -->
+        <!-- All Apps header -->
         <TextView
             android:id="@+id/sectionApps"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="48dp"
-            android:layout_marginTop="24dp"
-            android:text="@string/section_apps"
+            android:layout_marginLeft="56dp"
+            android:layout_marginTop="28dp"
+            android:text="@string/section_all_apps"
             android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
-        <!-- App Grid (D-pad remote navigation) -->
+        <!-- App grid -->
         <GridView
             android:id="@+id/appGridView"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:layout_marginLeft="48dp"
-            android:layout_marginRight="48dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp"
-            android:columnWidth="116dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="56dp"
+            android:layout_marginRight="56dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:columnWidth="110dp"
             android:numColumns="auto_fit"
             android:horizontalSpacing="24dp"
             android:verticalSpacing="24dp"
@@ -167,10 +90,56 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="10dp"
             android:text="@string/made_in_pakistan"
-            android:textColor="#66FFFFFF"
+            android:textColor="#55FFFFFF"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- Standby overlay: dim layer -->
+    <View
+        android:id="@+id/dimOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#B3000000"
+        android:visibility="gone" />
+
+    <!-- Standby overlay: clock screensaver -->
+    <LinearLayout
+        android:id="@+id/screensaver"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#E6000000"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/screensaverClock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="72sp"
+            android:textStyle="bold"
+            android:shadowRadius="12"
+            android:shadowColor="#66FFFFFF"
+            android:shadowDy="0" />
+
+        <TextView
+            android:id="@+id/screensaverDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#99FFFFFF"
+            android:textSize="20sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="@string/made_in_pakistan"
+            android:textColor="#44FFFFFF"
             android:textSize="12sp" />
     </LinearLayout>
 
