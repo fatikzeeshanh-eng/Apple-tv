@@ -137,7 +137,8 @@
             </LinearLayout>
         </RelativeLayout>
 
-        <!-- Full-screen tvOS tile grid: rounded-square icons, names below -->
+        <!-- Full-screen tvOS tile grid: rounded-square icons, names below.
+             scrollingCache/animationCache off: lighter RAM on 512MB boxes -->
         <GridView
             android:id="@+id/appGridView"
             android:layout_width="match_parent"
@@ -153,7 +154,9 @@
             android:verticalSpacing="40dp"
             android:stretchMode="columnWidth"
             android:gravity="center"
-            android:smoothScrollbar="true" />
+            android:smoothScrollbar="true"
+            android:scrollingCache="false"
+            android:animationCache="false" />
 
         <!-- Footer: CC hint + credit -->
         <TextView
