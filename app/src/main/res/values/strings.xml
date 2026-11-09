@@ -1,12 +1,14 @@
 <resources>
     <string name="app_name">AppleTV Launcher</string>
-    <string name="tab_featured">Featured</string>
-    <string name="tab_apps">Apps</string>
-    <string name="section_apps">Apps</string>
-    <string name="shelf_empty">No apps installed</string>
+    <string name="tv_wordmark"> tv</string>
+    <string name="section_featured">Featured</string>
+    <string name="section_all_apps">All Apps</string>
+    <string name="press_to_open">Press select to open</string>
+    <string name="no_apps">No apps found</string>
     <string name="made_in_pakistan">Made in Pakistan 🇵🇰 by an 11-year-old kid</string>
-    <string name="hero_eyebrow">FEATURED APP</string>
-    <string name="hero_open">Press OK to open</string>
     <string name="hero_title">Apple TV Experience</string>
     <string name="hero_subtitle">KitKat Debloated Edition — Auto-Optimized on Launch</string>
+    <string name="tab_featured">Featured</string>
+    <string name="tab_apps">Apps</string>
+    <string name="shelf_empty">No apps installed</string>
 </resources>
