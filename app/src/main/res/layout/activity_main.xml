@@ -11,7 +11,7 @@
         android:orientation="vertical"
         android:background="@drawable/ambient_backdrop">
 
-        <!-- Header: user avatar + Apple TV wordmark + live clock (tvOS style) -->
+        <!-- Header: user avatar + wordmark + Input/Control Center buttons + clock -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -49,15 +49,58 @@
                 android:textColor="#FFFFFF"
                 android:textSize="34sp" />
 
-            <TextView
-                android:id="@+id/headerClock"
+            <!-- Right side: Input button + Control Center button + clock -->
+            <LinearLayout
+                android:id="@+id/headerRight"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
-                android:fontFamily="sans-serif-light"
-                android:textColor="#88FFFFFF"
-                android:textSize="18sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/inputButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="18dp"
+                    android:paddingRight="18dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:background="@drawable/cc_button"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:fontFamily="sans-serif-light"
+                    android:text="@string/btn_input"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/ccButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="12dp"
+                    android:paddingLeft="18dp"
+                    android:paddingRight="18dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:background="@drawable/cc_button"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:fontFamily="sans-serif-light"
+                    android:text="@string/btn_control_center"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/headerClock"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="16dp"
+                    android:fontFamily="sans-serif-light"
+                    android:textColor="#88FFFFFF"
+                    android:textSize="18sp" />
+            </LinearLayout>
         </RelativeLayout>
 
         <!-- Full-screen tvOS tile grid -->
@@ -101,7 +144,7 @@
             android:textSize="11sp" />
     </LinearLayout>
 
-    <!-- Control Center overlay (MENU key on remote) -->
+    <!-- Control Center overlay (MENU key or Control Center button) -->
     <FrameLayout
         android:id="@+id/ccPanel"
         android:layout_width="match_parent"
