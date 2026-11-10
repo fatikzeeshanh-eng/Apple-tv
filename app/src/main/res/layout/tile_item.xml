@@ -1,48 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Exact tvOS tile: app artwork fills the whole rounded-square, name centered below -->
+<!-- Exact tvOS 26 tile: wide 5:3 card (248x148px measured from Apple's press shot), name below -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+    android:layout_width="220dp"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center_horizontal"
-    android:paddingTop="12dp"
-    android:paddingBottom="12dp">
+    android:paddingTop="10dp"
+    android:paddingBottom="8dp">
 
-    <!-- tvOS app icon: full-bleed rounded-square (corners clipped in code) -->
+    <!-- tvOS 26 app card: wide rounded rectangle, app artwork inside -->
     <FrameLayout
-        android:layout_width="140dp"
-        android:layout_height="140dp">
+        android:layout_width="220dp"
+        android:layout_height="132dp"
+        android:background="@drawable/tile_background">
 
         <ImageView
             android:id="@+id/tileIcon"
-            android:layout_width="140dp"
-            android:layout_height="140dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
             android:layout_gravity="center"
             android:scaleType="fitCenter"
             android:contentDescription="@null" />
 
-        <!-- Emoji icon slot (Settings gear tile): rounded glass background -->
+        <!-- Emoji icon slot (Settings gear tile) -->
         <TextView
             android:id="@+id/tileEmoji"
-            android:layout_width="140dp"
-            android:layout_height="140dp"
+            android:layout_width="220dp"
+            android:layout_height="132dp"
             android:gravity="center"
-            android:background="@drawable/tile_background"
-            android:textSize="64sp"
+            android:textSize="52sp"
             android:visibility="gone" />
     </FrameLayout>
 
-    <!-- App name under the icon, tvOS style -->
+    <!-- App name under the card, tvOS style -->
     <TextView
         android:id="@+id/tileLabel"
-        android:layout_width="190dp"
+        android:layout_width="220dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="10dp"
         android:gravity="center"
         android:ellipsize="end"
         android:maxLines="1"
         android:fontFamily="sans-serif-light"
         android:textColor="#FFFFFF"
-        android:textSize="20sp" />
+        android:textSize="18sp" />
 
 </LinearLayout>
