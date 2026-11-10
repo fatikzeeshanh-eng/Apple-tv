@@ -256,6 +256,35 @@
                     android:textColor="#FFFFFF"
                     android:textSize="16sp" />
             </LinearLayout>
+
+            <!-- Input row (moved here from the old header) -->
+            <LinearLayout
+                android:id="@+id/ccInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp"
+                android:background="@drawable/cc_button"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📺"
+                    android:textSize="24sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="12dp"
+                    android:fontFamily="sans-serif-light"
+                    android:text="@string/btn_input"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+            </LinearLayout>
         </LinearLayout>
     </FrameLayout>
 
