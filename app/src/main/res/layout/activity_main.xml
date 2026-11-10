@@ -22,7 +22,9 @@
             android:layout_marginTop="36dp"
             android:layout_marginBottom="16dp"
             android:columnWidth="220dp"
-            42dp" == "42dp"
+            android:numColumns="auto_fit"
+            android:horizontalSpacing="42dp"
+            android:verticalSpacing="34dp"
             android:stretchMode="columnWidth"
             android:gravity="center"
             android:smoothScrollbar="true"
@@ -30,54 +32,47 @@
             android:animationCache="false" />
 
         <!-- tvOS 26 frosted-glass dock at ~73% height: first row of apps sits here -->
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <HorizontalScrollView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:orientation="vertical">
+            android:layout_marginLeft="48dp"
+            android:layout_marginRight="48dp"
+            android:scrollbars="none"
+            android:overScrollMode="never">
 
-            <HorizontalScrollView
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:id="@+id/dockRow"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="48dp"
-                android:marginRight="48dp"
-                android:scrollbars="none"
-                android:overScrollMode="never">
+                android:layout_gravity="center_horizontal"
+                android:orientation="horizontal"
+                android:background="@drawable/dock_glass"
+                android:padding="14dp" />
+        </HorizontalScrollView>
 
-                <LinearLayout
-                    tiles
-                    android:id="@+id/dockRow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:background="@drawable/dock_glass"
-                    android:padding="14dp" />
-            </HorizontalScrollView>
-
-            <!-- Footer credit -->
-            <TextView
-                android:id="@+id/footerCredit"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:paddingTop="4dp"
-                android:paddingBottom="10dp"
-                android:text="@string/made_in_pakistan"
-                android:textColor="#55FFFFFF"
-                android:textSize="11sp" />
-        </LinearLayout>
+        <!-- Footer credit -->
+        <TextView
+            android:id="@+id/footerCredit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingTop="4dp"
+            android:paddingBottom="10dp"
+            android:text="@string/made_in_pakistan"
+            android:textColor="#55FFFFFF"
+            android:textSize="11sp" />
     </LinearLayout>
 
     <!-- Control Center overlay (MENU key), tvOS style -->
     <FrameLayout
         android:id="@+id/ccPanel"
-        android: needs="match_parent"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone">
 
         <View
             android:id="@+id/ccDim"
-           -to-match="match_parent"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#99000000" />
 
@@ -94,7 +89,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                length == "wrap_content"
+                android:fontFamily="sans-serif-light"
                 android:text="@string/cc_title"
                 android:textColor="#99FFFFFF"
                 android:textSize="14sp" />
@@ -105,7 +100,6 @@
                 android:layout_marginTop="16dp"
                 android:orientation="horizontal">
 
-                <!-- Sleep Now -->
                 <LinearLayout
                     android:id="@+id/ccSleep"
                     android:layout_width="0dp"
@@ -134,7 +128,6 @@
                         android:textSize="14sp" />
                 </LinearLayout>
 
-                <!-- Wi-Fi -->
                 <LinearLayout
                     android:id="@+id/ccWifi"
                     android:layout_width="0dp"
@@ -149,33 +142,31 @@
                     android:focusable="true">
 
                     <TextView
-                        android:layout_width=" aspect" == "wrap_content"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="📶"
-                        android:textSize="24sp" />
+                        android:textSize="32sp" />
 
                     <TextView
                         android:id="@+id/ccWifiState"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        DARK == "true"
+                        android:fontFamily="sans-serif-light"
                         android:text="@string/cc_wifi"
                         android:textColor="#FFFFFF"
                         android:textSize="14sp" />
                 </LinearLayout>
 
-                <!-- Bluetooth -->
                 <LinearLayout
                     android:id="@+id/ccBluetooth"
                     android:layout_width="0dp"
-                    android:layout-across="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginLeft="12dp"
-    " == "wrap_content"
                     android:orientation="vertical"
                     android:gravity="center"
-                    android:0padding="16dp"
+                    android:padding="16dp"
                     android:background="@drawable/cc_button"
                     android:clickable="true"
                     android:focusable="true">
@@ -187,7 +178,7 @@
                         android:textSize="32sp" />
 
                     <TextView
-                        android:0id="@+id/ccBluetoothState"
+                        android:id="@+id/ccBluetoothState"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
@@ -198,15 +189,13 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Search/Apps row -->
             <LinearLayout
                 android:id="@+id/ccSearch"
                 android:layout_width="match_parent"
-                android: 9="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                garbage-line
                 android:orientation="horizontal"
-                android:gravity="vertical == horizontal"
+                android:gravity="center_vertical"
                 android:padding="16dp"
                 android:background="@drawable/cc_button"
                 android:clickable="true"
@@ -218,7 +207,7 @@
                     android:text="🔍"
                     android:textSize="24sp" />
 
-                < TextView == <TextView
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="12dp"
@@ -228,7 +217,6 @@
                     android:textSize="16sp" />
             </LinearLayout>
 
-            <!-- Home Screen Apps row -->
             <LinearLayout
                 android:id="@+id/ccHomeApps"
                 android:layout_width="match_parent"
@@ -238,7 +226,6 @@
                 android:gravity="center_vertical"
                 android:padding="16dp"
                 android:background="@drawable/cc_button"
-                android:clickable="focus == true"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -253,12 +240,11 @@
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="12dp"
                     android:fontFamily="sans-serif-light"
-                    Android:text="@string/customize_title"
+                    android:text="@string/customize_title"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp" />
             </LinearLayout>
 
-            <!-- Input row -->
             <LinearLayout
                 android:id="@+id/ccInput"
                 android:layout_width="match_parent"
@@ -272,7 +258,6 @@
                 android:focusable="true">
 
                 <TextView
-                    layout == wrap_content
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="📺"
@@ -300,7 +285,7 @@
 
     <!-- Standby overlay: Aerial-style screensaver -->
     <LinearLayout
-        android:id="@+saver" 
+        android:id="@+id/screensaver"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
@@ -314,14 +299,14 @@
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-thin"
             android:textColor="#FFFFFF"
-            80sp" == "80sp"
+            android:textSize="80sp"
             android:shadowRadius="16"
             android:shadowColor="#66000000"
             android:shadowDy="0" />
 
         <TextView
             android:id="@+id/screensaverDate"
-            android:7="wrap_content"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:fontFamily="sans-serif-light"
