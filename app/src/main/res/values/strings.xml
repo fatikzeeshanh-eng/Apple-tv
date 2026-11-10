@@ -29,7 +29,7 @@
     <string name="settings_optimize">Optimize TV</string>
     <string name="settings_about">About</string>
     <string name="settings_hint">Press BACK to return to Home</string>
-    <string name="about_body">Clean Your TV v2.9\n\nA tvOS-style home for Android 4.4 KitKat.\nCleans bloatware, optimizes RAM, gives your TV the Apple TV look.\n\nMade in Pakistan 🇵🇰 by an 11-year-old kid.\nBuilt with AshnaAI.</string>
+    <string name="about_body">Clean Your TV v3.2\n\nAn exact tvOS-style home for Android 4.4 KitKat.\nGreeting + live clock, full-bleed rounded icons, Control Center, Aerial screensaver.\nCleans bloatware, optimizes RAM, gives your TV the Apple TV look.\n\nMade in Pakistan 🇵🇰 by an 11-year-old kid.\nBuilt with AshnaAI.</string>
     <string name="btn_apps">Apps</string>
     <string name="btn_add_apps">Add Apps</string>
     <string name="add_apps_title">Add Apps to Home Screen</string>
@@ -43,4 +43,7 @@
     <string name="customize_title">Home Screen Apps</string>
     <string name="customize_hint">Uncheck an app to hide it from the Home screen</string>
     <string name="customize_back_hint">Press BACK when done — Home updates instantly</string>
+    <string name="greeting_morning">Good Morning</string>
+    <string name="greeting_afternoon">Good Afternoon</string>
+    <string name="greeting_evening">Good Evening</string>
 </resources>
