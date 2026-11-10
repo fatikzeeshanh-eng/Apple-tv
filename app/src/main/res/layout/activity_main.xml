@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Content layer: clean tvOS home screen -->
+    <!-- Content layer: exact tvOS home screen — just the avatar up top, tiles below -->
     <LinearLayout
         android:id="@+id/contentLayer"
         android:layout_width="match_parent"
@@ -11,16 +11,14 @@
         android:orientation="vertical"
         android:background="@drawable/ambient_backdrop">
 
-        <!-- Header: avatar + wordmark + Apps/Add/Input/Control Center buttons + clock -->
+        <!-- tvOS header: user avatar only, top-left — no buttons, no clock -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingLeft="48dp"
-            android:paddingRight="48dp"
-            android:paddingTop="32dp"
-            android:paddingBottom="12dp">
+            android:paddingLeft="56dp"
+            android:paddingTop="36dp"
+            android:paddingBottom="8dp">
 
-            <!-- tvOS user avatar circle -->
             <FrameLayout
                 android:id="@+id/avatarCircle"
                 android:layout_width="44dp"
@@ -36,108 +34,9 @@
                     android:text="🙂"
                     android:textSize="22sp" />
             </FrameLayout>
-
-            <TextView
-                android:id="@+id/tvWordmark"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_toRightOf="@+id/avatarCircle"
-                android:layout_marginLeft="28dp"
-                android:layout_centerVertical="true"
-                android:fontFamily="sans-serif-light"
-                android:text="@string/tv_wordmark"
-                android:textColor="#FFFFFF"
-                android:textSize="34sp" />
-
-            <!-- Right side: Apps + Add Apps + Input + Control Center + clock -->
-            <LinearLayout
-                android:id="@+id/headerRight"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/appsButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingLeft="18dp"
-                    android:paddingRight="18dp"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp"
-                    android:background="@drawable/cc_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:fontFamily="sans-serif-light"
-                    android:text="@string/btn_apps"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/addAppsButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="12dp"
-                    android:paddingLeft="18dp"
-                    android:paddingRight="18dp"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp"
-                    android:background="@drawable/cc_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:fontFamily="sans-serif-light"
-                    android:text="@string/btn_add_apps"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/inputButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="12dp"
-                    android:paddingLeft="18dp"
-                    android:paddingRight="18dp"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp"
-                    android:background="@drawable/cc_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:fontFamily="sans-serif-light"
-                    android:text="@string/btn_input"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/ccButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="12dp"
-                    android:paddingLeft="18dp"
-                    android:paddingRight="18dp"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp"
-                    android:background="@drawable/cc_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:fontFamily="sans-serif-light"
-                    android:text="@string/btn_control_center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/headerClock"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="16dp"
-                    android:fontFamily="sans-serif-light"
-                    android:textColor="#88FFFFFF"
-                    android:textSize="18sp" />
-            </LinearLayout>
         </RelativeLayout>
 
-        <!-- Full-screen tvOS tile grid: rounded-square icons, names below.
+        <!-- Full-screen tvOS tile grid: full-bleed rounded-square icons, names below.
              scrollingCache/animationCache off: lighter RAM on 512MB boxes -->
         <GridView
             android:id="@+id/appGridView"
@@ -146,7 +45,7 @@
             android:layout_weight="1"
             android:layout_marginLeft="56dp"
             android:layout_marginRight="56dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="24dp"
             android:layout_marginBottom="8dp"
             android:columnWidth="190dp"
             android:numColumns="auto_fit"
@@ -158,17 +57,7 @@
             android:scrollingCache="false"
             android:animationCache="false" />
 
-        <!-- Footer: CC hint + credit -->
-        <TextView
-            android:id="@+id/ccHintBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:paddingTop="2dp"
-            android:text="@string/cc_hint"
-            android:textColor="#44FFFFFF"
-            android:textSize="11sp" />
-
+        <!-- Footer credit -->
         <TextView
             android:id="@+id/footerCredit"
             android:layout_width="match_parent"
@@ -181,7 +70,7 @@
             android:textSize="11sp" />
     </LinearLayout>
 
-    <!-- Control Center overlay (MENU key or Control Center button) -->
+    <!-- Control Center overlay (MENU key), tvOS style: features live here now -->
     <FrameLayout
         android:id="@+id/ccPanel"
         android:layout_width="match_parent"
@@ -310,7 +199,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Search Apps row -->
+            <!-- Search/Apps row -->
             <LinearLayout
                 android:id="@+id/ccSearch"
                 android:layout_width="match_parent"
@@ -335,6 +224,35 @@
                     android:layout_marginLeft="12dp"
                     android:fontFamily="sans-serif-light"
                     android:text="@string/cc_search"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <!-- Home Screen Apps row (moved here from the old header) -->
+            <LinearLayout
+                android:id="@+id/ccHomeApps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp"
+                android:background="@drawable/cc_button"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🏠"
+                    android:textSize="24sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="12dp"
+                    android:fontFamily="sans-serif-light"
+                    android:text="@string/customize_title"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp" />
             </LinearLayout>
