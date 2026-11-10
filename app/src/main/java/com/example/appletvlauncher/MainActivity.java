@@ -15,6 +15,8 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
@@ -26,7 +28,6 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,26 +46,31 @@ public class MainActivity extends Activity {
     // Special entry: built-in tvOS-style Settings app shown as a gear tile
     private static final String SETTINGS_PACKAGE = "@@settings@@";
 
-    // RAM-saver: icons are drawn once into small rounded bitmaps (see shrinkIcon)
+    // eShare debloat: the pre-installed screen-mirroring bloat on cheap boxes
+    // (EShareServer / ESharePro / com.eshare.*). Its device name on the
+    // network looks like "eshare-4314". We kill its background processes and
+    // hide its tiles so the home screen stays clean tvOS.
+    private static final String BLOAT_MARKER = "eshare";
+
+    // RAM-saver: icons are drawn once into small rounded bitmaps (see buildIconTile)
     private static final int ICON_CACHE_PX = 160;
-    // Card corner radius, tvOS 26 measured proportion
+    // tvOS corner radius is about 22% of the icon size
     private static final float ICON_CORNER_RATIO = 0.22f;
-    // tvOS 26 measured focus scale from Apple's press screenshot
+    // tvOS focus snap: focused tile scales up
     private static final float FOCUS_SCALE = 1.2f;
-    // Apps that sit in the glass dock (first row, like tvOS)
-    private static final int DOCK_COUNT = 6;
 
     private GridView appGridView;
-    private LinearLayout dockRow;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
     private List<AppInfo> allApps = new ArrayList<AppInfo>();
     private PackageManager packageManager;
-    private int dockCount = 0;
 
+    private TextView homeGreeting;
+    private TextView homeClock;
     private TextView screensaverClock;
     private TextView screensaverDate;
     private View dimOverlay;
     private View screensaver;
+    private View contentLayer;
     private View ccPanel;
     private View ccSleep;
     private View ccWifi;
@@ -74,6 +80,7 @@ public class MainActivity extends Activity {
     private View ccInput;
 
     private boolean ccOpen = false;
+    private int currentWash = Color.rgb(16, 16, 20);
 
     private final Handler handler = new Handler();
     private final Runnable dimRunnable = new Runnable() {
@@ -95,6 +102,7 @@ public class MainActivity extends Activity {
             handler.postDelayed(clockTick, 30000L);
         }
     };
+    // Drift the screensaver sky color every 8 seconds, like Aerial scenes fading
     private final Runnable aerialDrift = new Runnable() {
         @Override
         public void run() {
@@ -109,12 +117,14 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         appGridView = (GridView) findViewById(R.id.appGridView);
-        dockRow = (LinearLayout) findViewById(R.id.dockRow);
         packageManager = getPackageManager();
+        homeGreeting = (TextView) findViewById(R.id.homeGreeting);
+        homeClock = (TextView) findViewById(R.id.homeClock);
         screensaverClock = (TextView) findViewById(R.id.screensaverClock);
         screensaverDate = (TextView) findViewById(R.id.screensaverDate);
         dimOverlay = findViewById(R.id.dimOverlay);
         screensaver = findViewById(R.id.screensaver);
+        contentLayer = findViewById(R.id.contentLayer);
         ccPanel = findViewById(R.id.ccPanel);
         ccSleep = findViewById(R.id.ccSleep);
         ccWifi = findViewById(R.id.ccWifi);
@@ -126,19 +136,19 @@ public class MainActivity extends Activity {
         performAutoDebloat();
         loadInstalledApps();
         applyHiddenFilter();
-        populateDock();
 
         appGridView.setAdapter(new TileAdapter());
         appGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                launchApp(appList.get(position + dockCount));
+                launchApp(appList.get(position));
             }
         });
         appGridView.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 animateTileFocus(view);
+                updateBackdrop(appList.get(position));
             }
 
             @Override
@@ -149,13 +159,10 @@ public class MainActivity extends Activity {
         setupControlCenter();
         updateClocks();
 
-        // tvOS: focus starts on the first dock app
-        dockRow.post(new Runnable() {
+        appGridView.post(new Runnable() {
             @Override
             public void run() {
-                if (dockRow.getChildCount() > 0) {
-                    dockRow.getChildAt(0).requestFocus();
-                } else if (appGridView.getChildCount() > 0) {
+                if (appGridView.getChildCount() > 0) {
                     appGridView.getChildAt(0).requestFocus();
                 }
             }
@@ -185,58 +192,9 @@ public class MainActivity extends Activity {
         resetStandby();
     }
 
-    // ---------- Dock: first row of apps on the glass panel, tvOS 26 style ----------
+    // ---------- App pickers (live in Control Center now, home stays exact tvOS) ----------
 
-    private void populateDock() {
-        dockRow.removeAllViews();
-        dockCount = Math.min(DOCK_COUNT, appList.size());
-        for (int i = 0; i < dockCount; i++) {
-            final AppInfo app = appList.get(i);
-            View tile = getLayoutInflater().inflate(R.layout.tile_item, dockRow, false);
-            ImageView icon = (ImageView) tile.findViewById(R.id.tileIcon);
-            TextView emoji = (TextView) tile.findViewById(R.id.tileEmoji);
-            final TextView label = (TextView) tile.findViewById(R.id.tileLabel);
-
-            if (app.emoji != null) {
-                icon.setVisibility(View.GONE);
-                emoji.setVisibility(View.VISIBLE);
-                emoji.setText(app.emoji);
-            } else {
-                icon.setVisibility(View.VISIBLE);
-                emoji.setVisibility(View.GONE);
-                icon.setImageDrawable(app.icon);
-            }
-            // tvOS dock: the name appears under the icon only while it's focused
-            label.setText(app.label);
-            label.setAlpha(0f);
-
-            tile.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    launchApp(app);
-                }
-            });
-            tile.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                @Override
-                public void onFocusChange(View v, boolean hasFocus) {
-                    animateDockFocus(v, hasFocus);
-                    label.animate().alpha(hasFocus ? 1f : 0f).setDuration(150).start();
-                }
-            });
-            dockRow.addView(tile);
-        }
-    }
-
-    private void animateDockFocus(View tile, boolean hasFocus) {
-        float scale = hasFocus ? FOCUS_SCALE : 1f;
-        tile.animate().scaleX(scale).scaleY(scale)
-                .setDuration(150)
-                .setInterpolator(new DecelerateInterpolator())
-                .start();
-    }
-
-    // ---------- App pickers (live in Control Center, home stays exact tvOS) ----------
-
+    // Quick alphabetical app picker — the Control Center "Search Apps" row
     private void showAppPicker() {
         if (appList.isEmpty()) {
             Toast.makeText(this, R.string.no_apps, Toast.LENGTH_SHORT).show();
@@ -258,6 +216,7 @@ public class MainActivity extends Activity {
                 .show();
     }
 
+    // Home Screen Apps: tick apps to show on Home, untick to remove, Done saves
     private void showAddAppsDialog() {
         if (allApps.isEmpty()) {
             Toast.makeText(this, R.string.no_apps, Toast.LENGTH_SHORT).show();
@@ -268,6 +227,7 @@ public class MainActivity extends Activity {
         java.util.Set<String> hidden = LauncherPreferences.getHiddenPackages(this);
         for (int i = 0; i < allApps.size(); i++) {
             names[i] = allApps.get(i).label;
+            // Checked = currently shown on the home screen
             checked[i] = !hidden.contains(allApps.get(i).packageName);
         }
 
@@ -290,16 +250,16 @@ public class MainActivity extends Activity {
                 .show();
     }
 
+    // Rebuild the visible grid from the saved choices
     private void rebuildGrid() {
         applyHiddenFilter();
-        populateDock();
         ((BaseAdapter) appGridView.getAdapter()).notifyDataSetChanged();
         appGridView.smoothScrollToPosition(0);
-        dockRow.post(new Runnable() {
+        appGridView.post(new Runnable() {
             @Override
             public void run() {
-                if (dockRow.getChildCount() > 0) {
-                    dockRow.getChildAt(0).requestFocus();
+                if (appGridView.getChildCount() > 0) {
+                    appGridView.getChildAt(0).requestFocus();
                 }
             }
         });
@@ -307,6 +267,9 @@ public class MainActivity extends Activity {
     }
 
     private void showInputPicker() {
+        // KitKat boxes have no TV input framework, so we show the standard
+        // tvOS-style input list. Cheap boxes switch inputs via their own
+        // hardware/remote, so we try the display settings and show a hint.
         final String[] inputs = {"HDMI 1", "HDMI 2", "AV 1", "AV 2", "TV"};
 
         new android.app.AlertDialog.Builder(this)
@@ -316,6 +279,7 @@ public class MainActivity extends Activity {
                     public void onClick(android.content.DialogInterface dialog, int which) {
                         String chosen = inputs[which];
                         boolean opened = false;
+                        // Some boxes expose a source/input settings screen
                         try {
                             Intent displaySettings = new Intent(Settings.ACTION_DISPLAY_SETTINGS);
                             startActivity(displaySettings);
@@ -418,8 +382,8 @@ public class MainActivity extends Activity {
                 ccPanel.setVisibility(View.GONE);
             }
         }, 250);
-        if (dockRow.getChildCount() > 0) {
-            dockRow.getChildAt(0).requestFocus();
+        if (appGridView.getChildCount() > 0) {
+            appGridView.getChildAt(0).requestFocus();
         }
     }
 
@@ -431,6 +395,7 @@ public class MainActivity extends Activity {
         handler.postDelayed(dimRunnable, DIM_AFTER_MS);
         long saverMs = LauncherPreferences.getSaverDelayMs(this);
         if (saverMs > 0) {
+            // Screensaver must come after the dim stage
             handler.postDelayed(saverRunnable, Math.max(saverMs, DIM_AFTER_MS + 1000L));
         }
     }
@@ -456,6 +421,7 @@ public class MainActivity extends Activity {
         ObjectAnimator fade = ObjectAnimator.ofFloat(screensaver, "alpha", 0f, 1f);
         fade.setDuration(1200);
         fade.start();
+        // Start the Aerial-style sky drift
         handler.removeCallbacks(aerialDrift);
         handler.postDelayed(aerialDrift, 8000L);
     }
@@ -479,6 +445,7 @@ public class MainActivity extends Activity {
         }, 400);
     }
 
+    // Slow breathing fade on the screensaver — Aerial vibe, API-19 safe
     private void driftAerial() {
         final View target = screensaver;
         target.animate().alpha(0.92f).setDuration(4000L).withEndAction(new Runnable() {
@@ -489,12 +456,26 @@ public class MainActivity extends Activity {
         }).start();
     }
 
+    // Home clock + screensaver clocks + time-based greeting, all in one place
     private void updateClocks() {
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat timeFmt = new SimpleDateFormat("h:mm a", Locale.getDefault());
         SimpleDateFormat dateFmt = new SimpleDateFormat("EEEE, MMM d", Locale.getDefault());
-        screensaverClock.setText(timeFmt.format(cal.getTime()));
+        String time = timeFmt.format(cal.getTime());
+
+        homeClock.setText(time);
+        screensaverClock.setText(time);
         screensaverDate.setText(dateFmt.format(cal.getTime()));
+
+        // Greeting above the clock, changes with the time of day
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        if (hour >= 5 && hour < 12) {
+            homeGreeting.setText(R.string.greeting_morning);
+        } else if (hour >= 12 && hour < 17) {
+            homeGreeting.setText(R.string.greeting_afternoon);
+        } else {
+            homeGreeting.setText(R.string.greeting_evening);
+        }
     }
 
     // ---------- Remote keys ----------
@@ -515,6 +496,36 @@ public class MainActivity extends Activity {
         return super.dispatchKeyEvent(event);
     }
 
+    // ---------- Ambient backdrop (the signature tvOS effect) ----------
+
+    private void updateBackdrop(AppInfo app) {
+        if (app == null || contentLayer == null) {
+            return;
+        }
+        try {
+            int wash = app.washColor != 0 ? app.washColor : Color.rgb(16, 16, 20);
+
+            LayerDrawable backdrop = (LayerDrawable) contentLayer.getBackground();
+            final GradientDrawable washLayer = (GradientDrawable) backdrop.findDrawableByLayerId(R.id.backdropWash);
+            final View target = contentLayer;
+
+            ValueAnimator colorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), currentWash, wash);
+            colorAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    Integer value = (Integer) animation.getAnimatedValue();
+                    washLayer.setColor(value);
+                    target.invalidate();
+                }
+            });
+            colorAnim.setDuration(900);
+            colorAnim.start();
+            currentWash = wash;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     // ---------- Focus animations ----------
 
     private void animateTileFocus(View view) {
@@ -522,13 +533,13 @@ public class MainActivity extends Activity {
             return;
         }
         view.animate().scaleX(FOCUS_SCALE).scaleY(FOCUS_SCALE)
-                .setDuration(150)
+                .setDuration(180)
                 .setInterpolator(new DecelerateInterpolator())
                 .start();
         for (int i = 0; i < appGridView.getChildCount(); i++) {
             View child = appGridView.getChildAt(i);
             if (child != null && child != view) {
-                child.animate().scaleX(1f).scaleY(1f).setDuration(150).start();
+                child.animate().scaleX(1f).scaleY(1f).setDuration(180).start();
             }
         }
     }
@@ -552,8 +563,18 @@ public class MainActivity extends Activity {
             List<ActivityManager.RunningAppProcessInfo> processes = am.getRunningAppProcesses();
             if (processes != null) {
                 for (ActivityManager.RunningAppProcessInfo processInfo : processes) {
+                    String name = processInfo.processName;
+                    if (name == null) {
+                        continue;
+                    }
+                    // eShare bloat: always kill its background service,
+                    // every single time the home screen opens
+                    if (name.toLowerCase(Locale.US).contains(BLOAT_MARKER)) {
+                        am.killBackgroundProcesses(name);
+                        continue;
+                    }
                     if (processInfo.importance > ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE) {
-                        am.killBackgroundProcesses(processInfo.processName);
+                        am.killBackgroundProcesses(name);
                     }
                 }
             }
@@ -562,16 +583,20 @@ public class MainActivity extends Activity {
         }
     }
 
-    // RAM-saver: draw each icon ONCE into a small bitmap, rounded-corner
-    // clipped like a tvOS app icon, over a dark tint of the icon's own
-    // average color so the tile reads as full-bleed artwork.
-    private Drawable shrinkIcon(Drawable original) {
+    // RAM-saver + exact tvOS look: draw each icon ONCE into a small bitmap,
+    // rounded-corner clipped like a tvOS app icon, over a dark tint of the
+    // icon's own average color so the tile reads as full-bleed artwork.
+    // Also stores the icon's ambient color for the tvOS backdrop wash.
+    // ARGB_4444 halves the memory of every tile on 512MB boxes.
+    private void buildIconTile(AppInfo app, Drawable original) {
         if (original == null) {
-            return null;
+            app.icon = null;
+            return;
         }
         try {
             int size = ICON_CACHE_PX;
 
+            // 1) Probe the icon's average color at tiny size
             int bg;
             Bitmap probe = Bitmap.createBitmap(24, 24, Bitmap.Config.ARGB_4444);
             Canvas pc = new Canvas(probe);
@@ -593,11 +618,19 @@ public class MainActivity extends Activity {
                 }
             }
             if (counted > 0) {
-                bg = Color.rgb((int) (r / counted / 2.5), (int) (g / counted / 2.5), (int) (b / counted / 2.5));
+                int avgR = (int) (r / counted);
+                int avgG = (int) (g / counted);
+                int avgB = (int) (b / counted);
+                // Darkened tint for the tile background
+                bg = Color.rgb(avgR / 3, avgG / 3, avgB / 3);
+                // Ambient wash for the tvOS backdrop (softer, tvOS-style)
+                app.washColor = Color.rgb(avgR / 2, avgG / 2, avgB / 2);
             } else {
                 bg = Color.rgb(28, 28, 32);
+                app.washColor = Color.rgb(28, 28, 34);
             }
 
+            // 2) Draw the icon at cache size, clipped to tvOS rounded corners
             Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_4444);
             Canvas c = new Canvas(bmp);
             float radius = size * ICON_CORNER_RATIO;
@@ -612,10 +645,10 @@ public class MainActivity extends Activity {
 
             BitmapDrawable small = new BitmapDrawable(getResources(), bmp);
             small.setBounds(0, 0, size, size);
-            return small;
+            app.icon = small;
         } catch (Exception e) {
             e.printStackTrace();
-            return original;
+            app.icon = original;
         }
     }
 
@@ -629,7 +662,7 @@ public class MainActivity extends Activity {
                 AppInfo app = new AppInfo();
                 app.label = info.loadLabel(packageManager).toString();
                 app.packageName = info.activityInfo.packageName;
-                app.icon = shrinkIcon(info.loadIcon(packageManager));
+                buildIconTile(app, info.loadIcon(packageManager));
                 allApps.add(app);
             }
         }
@@ -642,20 +675,27 @@ public class MainActivity extends Activity {
         });
     }
 
+    // Build the visible home screen list: shown apps + Settings gear first
     private void applyHiddenFilter() {
         java.util.Set<String> hidden = LauncherPreferences.getHiddenPackages(this);
         appList.clear();
         for (AppInfo app : allApps) {
+            // eShare bloat: force-hidden from the tvOS home, always
+            if (app.packageName != null
+                    && app.packageName.toLowerCase(Locale.US).contains(BLOAT_MARKER)) {
+                continue;
+            }
             if (!hidden.contains(app.packageName)) {
                 appList.add(app);
             }
         }
 
-        // Built-in Settings app: always first tile in the dock, tvOS style
+        // Built-in Settings app: always first tile in the grid, tvOS style
         AppInfo settingsApp = new AppInfo();
         settingsApp.label = getString(R.string.settings_title);
         settingsApp.packageName = SETTINGS_PACKAGE;
         settingsApp.icon = null;
+        settingsApp.washColor = Color.rgb(35, 35, 40);
         settingsApp.emoji = "⚙️";
         appList.add(0, settingsApp);
     }
@@ -665,18 +705,18 @@ public class MainActivity extends Activity {
         String packageName;
         Drawable icon;
         String emoji;
+        int washColor;
     }
 
-    // Grid adapter: shows every app EXCEPT the dock row, above the dock
     private class TileAdapter extends BaseAdapter {
         @Override
         public int getCount() {
-            return Math.max(0, appList.size() - dockCount);
+            return appList.size();
         }
 
         @Override
         public Object getItem(int position) {
-            return appList.get(position + dockCount);
+            return appList.get(position);
         }
 
         @Override
@@ -700,8 +740,9 @@ public class MainActivity extends Activity {
                 holder = (Holder) row.getTag();
             }
 
-            AppInfo app = appList.get(position + dockCount);
+            AppInfo app = appList.get(position);
             if (app.emoji != null) {
+                // Emoji tile (Settings gear)
                 holder.icon.setVisibility(View.GONE);
                 holder.emoji.setVisibility(View.VISIBLE);
                 holder.emoji.setText(app.emoji);
