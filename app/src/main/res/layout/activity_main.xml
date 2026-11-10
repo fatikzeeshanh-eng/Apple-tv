@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Content layer: exact tvOS home screen — just the avatar up top, tiles below -->
+    <!-- Content layer: exact tvOS home screen — avatar top-left, greeting + clock top-right -->
     <LinearLayout
         android:id="@+id/contentLayer"
         android:layout_width="match_parent"
@@ -11,11 +11,12 @@
         android:orientation="vertical"
         android:background="@drawable/ambient_backdrop">
 
-        <!-- tvOS header: user avatar only, top-left — no buttons, no clock -->
+        <!-- tvOS header: avatar left — greeting + clock right, nothing else -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingLeft="56dp"
+            android:paddingRight="56dp"
             android:paddingTop="36dp"
             android:paddingBottom="8dp">
 
@@ -34,6 +35,30 @@
                     android:text="🙂"
                     android:textSize="22sp" />
             </FrameLayout>
+
+            <!-- Greeting above the clock, tvOS-thin font -->
+            <TextView
+                android:id="@+id/homeGreeting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="6dp"
+                android:fontFamily="sans-serif-thin"
+                android:textColor="#99FFFFFF"
+                android:textSize="18sp" />
+
+            <!-- Live clock under the greeting -->
+            <TextView
+                android:id="@+id/homeClock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_below="@+id/homeGreeting"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif-light"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp" />
         </RelativeLayout>
 
         <!-- Full-screen tvOS tile grid: full-bleed rounded-square icons, names below.
@@ -228,7 +253,7 @@
                     android:textSize="16sp" />
             </LinearLayout>
 
-            <!-- Home Screen Apps row (moved here from the old header) -->
+            <!-- Home Screen Apps row -->
             <LinearLayout
                 android:id="@+id/ccHomeApps"
                 android:layout_width="match_parent"
@@ -257,7 +282,7 @@
                     android:textSize="16sp" />
             </LinearLayout>
 
-            <!-- Input row (moved here from the old header) -->
+            <!-- Input row -->
             <LinearLayout
                 android:id="@+id/ccInput"
                 android:layout_width="match_parent"
