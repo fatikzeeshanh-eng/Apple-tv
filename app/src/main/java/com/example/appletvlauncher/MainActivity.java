@@ -11,6 +11,9 @@ import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -42,23 +45,19 @@ public class MainActivity extends Activity {
 
     private static final long DIM_AFTER_MS = 60000L;
 
-    // Aerial-style screensaver: sky colors it drifts through (deep night blues/purples)
-    private static final int[] AERIAL_COLORS = {
-            0xFF0B1026, 0xFF1B2A4A, 0xFF2E4370, 0xFF1F2A44, 0xFF0B1026
-    };
-
     // Special entry: built-in tvOS-style Settings app shown as a gear tile
     private static final String SETTINGS_PACKAGE = "@@settings@@";
 
-    // RAM-saver: icons are drawn once into 96px bitmaps (see shrinkIcon)
-    private static final int ICON_CACHE_PX = 96;
+    // RAM-saver: icons are drawn once into small rounded bitmaps (see shrinkIcon)
+    private static final int ICON_CACHE_PX = 160;
+    // tvOS corner radius is about 22% of the icon size
+    private static final float ICON_CORNER_RATIO = 0.22f;
 
     private GridView appGridView;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
     private List<AppInfo> allApps = new ArrayList<AppInfo>();
     private PackageManager packageManager;
 
-    private TextView headerClock;
     private TextView screensaverClock;
     private TextView screensaverDate;
     private View dimOverlay;
@@ -69,13 +68,10 @@ public class MainActivity extends Activity {
     private View ccWifi;
     private View ccBluetooth;
     private View ccSearch;
-    private View inputButton;
-    private View ccButton;
-    private View appsButton;
-    private View addAppsButton;
+    private View ccHomeApps;
+    private View ccInput;
 
     private boolean ccOpen = false;
-    private int aerialIndex = 0;
 
     private final Handler handler = new Handler();
     private final Runnable dimRunnable = new Runnable() {
@@ -113,7 +109,6 @@ public class MainActivity extends Activity {
 
         appGridView = (GridView) findViewById(R.id.appGridView);
         packageManager = getPackageManager();
-        headerClock = (TextView) findViewById(R.id.headerClock);
         screensaverClock = (TextView) findViewById(R.id.screensaverClock);
         screensaverDate = (TextView) findViewById(R.id.screensaverDate);
         dimOverlay = findViewById(R.id.dimOverlay);
@@ -124,10 +119,8 @@ public class MainActivity extends Activity {
         ccWifi = findViewById(R.id.ccWifi);
         ccBluetooth = findViewById(R.id.ccBluetooth);
         ccSearch = findViewById(R.id.ccSearch);
-        inputButton = findViewById(R.id.inputButton);
-        ccButton = findViewById(R.id.ccButton);
-        appsButton = findViewById(R.id.appsButton);
-        addAppsButton = findViewById(R.id.addAppsButton);
+        ccHomeApps = findViewById(R.id.ccHomeApps);
+        ccInput = findViewById(R.id.ccInput);
 
         performAutoDebloat();
         loadInstalledApps();
@@ -144,7 +137,6 @@ public class MainActivity extends Activity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 animateTileFocus(view);
-                updateBackdrop(appList.get(position));
             }
 
             @Override
@@ -153,7 +145,6 @@ public class MainActivity extends Activity {
         });
 
         setupControlCenter();
-        setupHeaderButtons();
         updateClocks();
 
         appGridView.post(new Runnable() {
@@ -189,43 +180,9 @@ public class MainActivity extends Activity {
         resetStandby();
     }
 
-    // ---------- Header buttons: Apps + Add Apps + Input + Control Center ----------
+    // ---------- App pickers (live in Control Center now, home stays exact tvOS) ----------
 
-    private void setupHeaderButtons() {
-        // Apps button opens a quick picker of every installed app
-        appsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showAppPicker();
-            }
-        });
-
-        // Add Apps button opens the home screen customization checklist
-        addAppsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showAddAppsDialog();
-            }
-        });
-
-        // Control Center button opens the same panel as the MENU key
-        ccButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                toggleControlCenter();
-            }
-        });
-
-        // Input button opens the tvOS-style input picker
-        inputButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showInputPicker();
-            }
-        });
-    }
-
-    // Quick app picker: same list as the home grid, tap = launch (tvOS style)
+    // Quick alphabetical app picker — the Control Center "Search Apps" row
     private void showAppPicker() {
         if (appList.isEmpty()) {
             Toast.makeText(this, R.string.no_apps, Toast.LENGTH_SHORT).show();
@@ -236,7 +193,7 @@ public class MainActivity extends Activity {
             names[i] = appList.get(i).label;
         }
         new android.app.AlertDialog.Builder(this)
-                .setTitle(R.string.btn_apps)
+                .setTitle(R.string.cc_search)
                 .setItems(names, new android.content.DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(android.content.DialogInterface dialog, int which) {
@@ -247,7 +204,7 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    // Add Apps: tick apps to show on Home Screen, untick to remove, Done saves
+    // Home Screen Apps: tick apps to show on Home, untick to remove, Done saves
     private void showAddAppsDialog() {
         if (allApps.isEmpty()) {
             Toast.makeText(this, R.string.no_apps, Toast.LENGTH_SHORT).show();
@@ -329,7 +286,7 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    // ---------- Control Center (tvOS 17 style) ----------
+    // ---------- Control Center (tvOS style, opened with the MENU key) ----------
 
     private void setupControlCenter() {
         ccSleep.setOnClickListener(new View.OnClickListener() {
@@ -365,13 +322,21 @@ public class MainActivity extends Activity {
         ccSearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    Intent search = new Intent(Intent.ACTION_SEARCH_LONG_PRESS);
-                    search.addCategory(Intent.CATEGORY_DEFAULT);
-                    startActivity(search);
-                } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Search not available on this box", Toast.LENGTH_SHORT).show();
-                }
+                showAppPicker();
+            }
+        });
+
+        ccHomeApps.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showAddAppsDialog();
+            }
+        });
+
+        ccInput.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showInputPicker();
             }
         });
     }
@@ -483,7 +448,6 @@ public class MainActivity extends Activity {
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat timeFmt = new SimpleDateFormat("h:mm a", Locale.getDefault());
         SimpleDateFormat dateFmt = new SimpleDateFormat("EEEE, MMM d", Locale.getDefault());
-        headerClock.setText(timeFmt.format(cal.getTime()));
         screensaverClock.setText(timeFmt.format(cal.getTime()));
         screensaverDate.setText(dateFmt.format(cal.getTime()));
     }
@@ -504,66 +468,6 @@ public class MainActivity extends Activity {
             }
         }
         return super.dispatchKeyEvent(event);
-    }
-
-    // ---------- Ambient backdrop ----------
-
-    private void updateBackdrop(AppInfo app) {
-        if (app == null || app.icon == null || contentLayer == null) {
-            return;
-        }
-        try {
-            int size = 24;
-            Bitmap small = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-            Canvas c = new Canvas(small);
-            app.icon.setBounds(0, 0, size, size);
-            app.icon.draw(c);
-
-            int[] pixels = new int[size * size];
-            small.getPixels(pixels, 0, size, 0, 0, size, size);
-            long r = 0;
-            long g = 0;
-            long b = 0;
-            int counted = 0;
-            for (int pixel : pixels) {
-                if ((pixel & 0xFF000000) != 0) {
-                    r += (pixel >> 16) & 0xFF;
-                    g += (pixel >> 8) & 0xFF;
-                    b += pixel & 0xFF;
-                    counted++;
-                }
-            }
-            if (counted == 0) {
-                return;
-            }
-
-            int wash = Color.rgb((int) (r / counted / 3), (int) (g / counted / 3), (int) (b / counted / 3));
-
-            LayerDrawable backdrop = (LayerDrawable) contentLayer.getBackground();
-            final GradientDrawable washLayer = (GradientDrawable) backdrop.findDrawableByLayerId(R.id.backdropWash);
-            final View target = contentLayer;
-
-            int from;
-            Drawable current = washLayer.getCurrent();
-            if (current instanceof ColorDrawable) {
-                from = ((ColorDrawable) current).getColor();
-            } else {
-                from = Color.rgb(0, 0, 0);
-            }
-
-            ValueAnimator colorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), from, wash);
-            colorAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    washLayer.setColor((Integer) animation.getAnimatedValue());
-                    target.invalidate();
-                }
-            });
-            colorAnim.setDuration(900);
-            colorAnim.start();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     // ---------- Focus animations ----------
@@ -613,19 +517,58 @@ public class MainActivity extends Activity {
         }
     }
 
-    // RAM-saver: draw each icon once into a small 96px bitmap.
-    // PackageManager icons are large drawables; on 512MB boxes this cuts
-    // the icon memory the grid keeps alive by roughly 10x.
+    // RAM-saver + exact tvOS look: draw each icon ONCE into a small bitmap,
+    // rounded-corner clipped like a tvOS app icon, over a dark tint of the
+    // icon's own average color so the tile reads as full-bleed artwork.
+    // ARGB_4444 halves the memory of every tile on 512MB boxes.
     private Drawable shrinkIcon(Drawable original) {
         if (original == null) {
             return null;
         }
         try {
             int size = ICON_CACHE_PX;
+
+            // 1) Probe the icon's average color at tiny size
+            int bg;
+            Bitmap probe = Bitmap.createBitmap(24, 24, Bitmap.Config.ARGB_4444);
+            Canvas pc = new Canvas(probe);
+            original.setBounds(0, 0, 24, 24);
+            original.draw(pc);
+            int[] pixels = new int[24 * 24];
+            probe.getPixels(pixels, 0, 24, 0, 0, 24, 24);
+            probe.recycle();
+            long r = 0;
+            long g = 0;
+            long b = 0;
+            int counted = 0;
+            for (int pixel : pixels) {
+                if ((pixel & 0xFF000000) != 0) {
+                    r += (pixel >> 16) & 0xFF;
+                    g += (pixel >> 8) & 0xFF;
+                    b += pixel & 0xFF;
+                    counted++;
+                }
+            }
+            if (counted > 0) {
+                // Darken the average color so white icon artwork still reads
+                bg = Color.rgb((int) (r / counted / 2.5), (int) (g / counted / 2.5), (int) (b / counted / 2.5));
+            } else {
+                bg = Color.rgb(28, 28, 32);
+            }
+
+            // 2) Draw the icon at cache size, clipped to tvOS rounded corners
             Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_4444);
             Canvas c = new Canvas(bmp);
+            float radius = size * ICON_CORNER_RATIO;
+            Path path = new Path();
+            path.addRoundRect(new RectF(0, 0, size, size), radius, radius, Path.Direction.CW);
+            c.save();
+            c.clipPath(path);
+            c.drawColor(bg);
             original.setBounds(0, 0, size, size);
             original.draw(c);
+            c.restore();
+
             BitmapDrawable small = new BitmapDrawable(getResources(), bmp);
             small.setBounds(0, 0, size, size);
             return small;
