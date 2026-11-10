@@ -11,14 +11,10 @@ import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.LayerDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
@@ -58,6 +54,8 @@ public class MainActivity extends Activity {
     private List<AppInfo> allApps = new ArrayList<AppInfo>();
     private PackageManager packageManager;
 
+    private TextView homeGreeting;
+    private TextView homeClock;
     private TextView screensaverClock;
     private TextView screensaverDate;
     private View dimOverlay;
@@ -109,6 +107,8 @@ public class MainActivity extends Activity {
 
         appGridView = (GridView) findViewById(R.id.appGridView);
         packageManager = getPackageManager();
+        homeGreeting = (TextView) findViewById(R.id.homeGreeting);
+        homeClock = (TextView) findViewById(R.id.homeClock);
         screensaverClock = (TextView) findViewById(R.id.screensaverClock);
         screensaverDate = (TextView) findViewById(R.id.screensaverDate);
         dimOverlay = findViewById(R.id.dimOverlay);
@@ -444,12 +444,26 @@ public class MainActivity extends Activity {
         }).start();
     }
 
+    // Home clock + screensaver clocks + time-based greeting, all in one place
     private void updateClocks() {
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat timeFmt = new SimpleDateFormat("h:mm a", Locale.getDefault());
         SimpleDateFormat dateFmt = new SimpleDateFormat("EEEE, MMM d", Locale.getDefault());
-        screensaverClock.setText(timeFmt.format(cal.getTime()));
+        String time = timeFmt.format(cal.getTime());
+
+        homeClock.setText(time);
+        screensaverClock.setText(time);
         screensaverDate.setText(dateFmt.format(cal.getTime()));
+
+        // Greeting above the clock, changes with the time of day
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        if (hour >= 5 && hour < 12) {
+            homeGreeting.setText(R.string.greeting_morning);
+        } else if (hour >= 12 && hour < 17) {
+            homeGreeting.setText(R.string.greeting_afternoon);
+        } else {
+            homeGreeting.setText(R.string.greeting_evening);
+        }
     }
 
     // ---------- Remote keys ----------
