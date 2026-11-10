@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Content layer: exact tvOS 26 home — grid above, glass dock below -->
+    <!-- Content layer: exact tvOS home — avatar left, greeting + clock right, grid below -->
     <LinearLayout
         android:id="@+id/contentLayer"
         android:layout_width="match_parent"
@@ -11,44 +11,76 @@
         android:orientation="vertical"
         android:background="@drawable/ambient_backdrop">
 
-        <!-- Upper grid of wide tvOS 26 app cards -->
+        <!-- tvOS header: avatar left — greeting + clock right, nothing else -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="56dp"
+            android:paddingRight="56dp"
+            android:paddingTop="36dp"
+            android:paddingBottom="8dp">
+
+            <FrameLayout
+                android:id="@+id/avatarCircle"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/avatar_circle">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="🙂"
+                    android:textSize="22sp" />
+            </FrameLayout>
+
+            <!-- Greeting above the clock, tvOS-thin font -->
+            <TextView
+                android:id="@+id/homeGreeting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="6dp"
+                android:fontFamily="sans-serif-thin"
+                android:textColor="#99FFFFFF"
+                android:textSize="18sp" />
+
+            <!-- Live clock under the greeting -->
+            <TextView
+                android:id="@+id/homeClock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_below="@+id/homeGreeting"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif-light"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp" />
+        </RelativeLayout>
+
+        <!-- Full-screen tvOS tile grid: full-bleed rounded-square icons, names below.
+             scrollingCache/animationCache off: lighter RAM on 512MB boxes -->
         <GridView
             android:id="@+id/appGridView"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginLeft="48dp"
-            android:layout_marginRight="48dp"
-            android:layout_marginTop="36dp"
-            android:layout_marginBottom="16dp"
-            android:columnWidth="220dp"
+            android:layout_marginLeft="56dp"
+            android:layout_marginRight="56dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="8dp"
+            android:columnWidth="190dp"
             android:numColumns="auto_fit"
             android:horizontalSpacing="42dp"
-            android:verticalSpacing="34dp"
+            android:verticalSpacing="40dp"
             android:stretchMode="columnWidth"
             android:gravity="center"
             android:smoothScrollbar="true"
             android:scrollingCache="false"
             android:animationCache="false" />
-
-        <!-- tvOS 26 frosted-glass dock at ~73% height: first row of apps sits here -->
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="48dp"
-            android:layout_marginRight="48dp"
-            android:scrollbars="none"
-            android:overScrollMode="never">
-
-            <LinearLayout
-                android:id="@+id/dockRow"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:orientation="horizontal"
-                android:background="@drawable/dock_glass"
-                android:padding="14dp" />
-        </HorizontalScrollView>
 
         <!-- Footer credit -->
         <TextView
@@ -56,14 +88,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:paddingTop="4dp"
+            android:paddingTop="2dp"
             android:paddingBottom="10dp"
             android:text="@string/made_in_pakistan"
             android:textColor="#55FFFFFF"
             android:textSize="11sp" />
     </LinearLayout>
 
-    <!-- Control Center overlay (MENU key), tvOS style -->
+    <!-- Control Center overlay (MENU key), tvOS style: features live here now -->
     <FrameLayout
         android:id="@+id/ccPanel"
         android:layout_width="match_parent"
@@ -100,6 +132,7 @@
                 android:layout_marginTop="16dp"
                 android:orientation="horizontal">
 
+                <!-- Sleep Now -->
                 <LinearLayout
                     android:id="@+id/ccSleep"
                     android:layout_width="0dp"
@@ -128,6 +161,7 @@
                         android:textSize="14sp" />
                 </LinearLayout>
 
+                <!-- Wi-Fi -->
                 <LinearLayout
                     android:id="@+id/ccWifi"
                     android:layout_width="0dp"
@@ -158,6 +192,7 @@
                         android:textSize="14sp" />
                 </LinearLayout>
 
+                <!-- Bluetooth -->
                 <LinearLayout
                     android:id="@+id/ccBluetooth"
                     android:layout_width="0dp"
@@ -189,6 +224,7 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Search/Apps row -->
             <LinearLayout
                 android:id="@+id/ccSearch"
                 android:layout_width="match_parent"
@@ -217,6 +253,7 @@
                     android:textSize="16sp" />
             </LinearLayout>
 
+            <!-- Home Screen Apps row -->
             <LinearLayout
                 android:id="@+id/ccHomeApps"
                 android:layout_width="match_parent"
@@ -245,6 +282,7 @@
                     android:textSize="16sp" />
             </LinearLayout>
 
+            <!-- Input row -->
             <LinearLayout
                 android:id="@+id/ccInput"
                 android:layout_width="match_parent"
@@ -283,7 +321,7 @@
         android:background="#B3000000"
         android:visibility="gone" />
 
-    <!-- Standby overlay: Aerial-style screensaver -->
+    <!-- Standby overlay: Aerial-style screensaver (sky gradient + giant clock) -->
     <LinearLayout
         android:id="@+id/screensaver"
         android:layout_width="match_parent"
