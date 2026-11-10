@@ -15,6 +15,8 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
@@ -44,18 +46,18 @@ public class MainActivity extends Activity {
     // Special entry: built-in tvOS-style Settings app shown as a gear tile
     private static final String SETTINGS_PACKAGE = "@@settings@@";
 
-    // RAM-saver: icons are drawn once into small rounded bitmaps (see shrinkIcon)
+    // RAM-saver: icons are drawn once into small rounded bitmaps (see buildIconTile)
     private static final int ICON_CACHE_PX = 160;
     // tvOS corner radius is about 22% of the icon size
     private static final float ICON_CORNER_RATIO = 0.22f;
+    // tvOS focus snap: focused tile scales up
+    private static final float FOCUS_SCALE = 1.2f;
 
     private GridView appGridView;
     private List<AppInfo> appList = new ArrayList<AppInfo>();
     private List<AppInfo> allApps = new ArrayList<AppInfo>();
     private PackageManager packageManager;
 
-    private TextView homeGreeting;
-    private TextView homeClock;
     private TextView screensaverClock;
     private TextView screensaverDate;
     private View dimOverlay;
@@ -70,6 +72,7 @@ public class MainActivity extends Activity {
     private View ccInput;
 
     private boolean ccOpen = false;
+    private int currentWash = Color.rgb(16, 16, 20);
 
     private final Handler handler = new Handler();
     private final Runnable dimRunnable = new Runnable() {
@@ -107,8 +110,6 @@ public class MainActivity extends Activity {
 
         appGridView = (GridView) findViewById(R.id.appGridView);
         packageManager = getPackageManager();
-        homeGreeting = (TextView) findViewById(R.id.homeGreeting);
-        homeClock = (TextView) findViewById(R.id.homeClock);
         screensaverClock = (TextView) findViewById(R.id.screensaverClock);
         screensaverDate = (TextView) findViewById(R.id.screensaverDate);
         dimOverlay = findViewById(R.id.dimOverlay);
@@ -137,6 +138,7 @@ public class MainActivity extends Activity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 animateTileFocus(view);
+                updateBackdrop(appList.get(position));
             }
 
             @Override
@@ -444,26 +446,12 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    // Home clock + screensaver clocks + time-based greeting, all in one place
     private void updateClocks() {
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat timeFmt = new SimpleDateFormat("h:mm a", Locale.getDefault());
         SimpleDateFormat dateFmt = new SimpleDateFormat("EEEE, MMM d", Locale.getDefault());
-        String time = timeFmt.format(cal.getTime());
-
-        homeClock.setText(time);
-        screensaverClock.setText(time);
+        screensaverClock.setText(timeFmt.format(cal.getTime()));
         screensaverDate.setText(dateFmt.format(cal.getTime()));
-
-        // Greeting above the clock, changes with the time of day
-        int hour = cal.get(Calendar.HOUR_OF_DAY);
-        if (hour >= 5 && hour < 12) {
-            homeGreeting.setText(R.string.greeting_morning);
-        } else if (hour >= 12 && hour < 17) {
-            homeGreeting.setText(R.string.greeting_afternoon);
-        } else {
-            homeGreeting.setText(R.string.greeting_evening);
-        }
     }
 
     // ---------- Remote keys ----------
@@ -484,20 +472,50 @@ public class MainActivity extends Activity {
         return super.dispatchKeyEvent(event);
     }
 
+    // ---------- Ambient backdrop (the signature tvOS effect) ----------
+
+    private void updateBackdrop(AppInfo app) {
+        if (app == null || contentLayer == null) {
+            return;
+        }
+        try {
+            int wash = app.washColor != 0 ? app.washColor : Color.rgb(16, 16, 20);
+
+            LayerDrawable backdrop = (LayerDrawable) contentLayer.getBackground();
+            final GradientDrawable washLayer = (GradientDrawable) backdrop.findDrawableByLayerId(R.id.backdropWash);
+            final View target = contentLayer;
+
+            ValueAnimator colorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), currentWash, wash);
+            colorAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    Integer value = (Integer) animation.getAnimatedValue();
+                    washLayer.setColor(value);
+                    target.invalidate();
+                }
+            });
+            colorAnim.setDuration(900);
+            colorAnim.start();
+            currentWash = wash;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     // ---------- Focus animations ----------
 
     private void animateTileFocus(View view) {
         if (view == null) {
             return;
         }
-        view.animate().scaleX(1.15f).scaleY(1.15f)
-                .setDuration(150)
+        view.animate().scaleX(FOCUS_SCALE).scaleY(FOCUS_SCALE)
+                .setDuration(180)
                 .setInterpolator(new DecelerateInterpolator())
                 .start();
         for (int i = 0; i < appGridView.getChildCount(); i++) {
             View child = appGridView.getChildAt(i);
             if (child != null && child != view) {
-                child.animate().scaleX(1f).scaleY(1f).setDuration(150).start();
+                child.animate().scaleX(1f).scaleY(1f).setDuration(180).start();
             }
         }
     }
@@ -534,10 +552,12 @@ public class MainActivity extends Activity {
     // RAM-saver + exact tvOS look: draw each icon ONCE into a small bitmap,
     // rounded-corner clipped like a tvOS app icon, over a dark tint of the
     // icon's own average color so the tile reads as full-bleed artwork.
+    // Also stores the icon's ambient color for the tvOS backdrop wash.
     // ARGB_4444 halves the memory of every tile on 512MB boxes.
-    private Drawable shrinkIcon(Drawable original) {
+    private void buildIconTile(AppInfo app, Drawable original) {
         if (original == null) {
-            return null;
+            app.icon = null;
+            return;
         }
         try {
             int size = ICON_CACHE_PX;
@@ -564,10 +584,16 @@ public class MainActivity extends Activity {
                 }
             }
             if (counted > 0) {
-                // Darken the average color so white icon artwork still reads
-                bg = Color.rgb((int) (r / counted / 2.5), (int) (g / counted / 2.5), (int) (b / counted / 2.5));
+                int avgR = (int) (r / counted);
+                int avgG = (int) (g / counted);
+                int avgB = (int) (b / counted);
+                // Darkened tint for the tile background
+                bg = Color.rgb(avgR / 3, avgG / 3, avgB / 3);
+                // Ambient wash for the tvOS backdrop (softer, tvOS-style)
+                app.washColor = Color.rgb(avgR / 2, avgG / 2, avgB / 2);
             } else {
                 bg = Color.rgb(28, 28, 32);
+                app.washColor = Color.rgb(28, 28, 34);
             }
 
             // 2) Draw the icon at cache size, clipped to tvOS rounded corners
@@ -585,10 +611,10 @@ public class MainActivity extends Activity {
 
             BitmapDrawable small = new BitmapDrawable(getResources(), bmp);
             small.setBounds(0, 0, size, size);
-            return small;
+            app.icon = small;
         } catch (Exception e) {
             e.printStackTrace();
-            return original;
+            app.icon = original;
         }
     }
 
@@ -602,7 +628,7 @@ public class MainActivity extends Activity {
                 AppInfo app = new AppInfo();
                 app.label = info.loadLabel(packageManager).toString();
                 app.packageName = info.activityInfo.packageName;
-                app.icon = shrinkIcon(info.loadIcon(packageManager));
+                buildIconTile(app, info.loadIcon(packageManager));
                 allApps.add(app);
             }
         }
@@ -630,6 +656,7 @@ public class MainActivity extends Activity {
         settingsApp.label = getString(R.string.settings_title);
         settingsApp.packageName = SETTINGS_PACKAGE;
         settingsApp.icon = null;
+        settingsApp.washColor = Color.rgb(35, 35, 40);
         settingsApp.emoji = "⚙️";
         appList.add(0, settingsApp);
     }
@@ -639,6 +666,7 @@ public class MainActivity extends Activity {
         String packageName;
         Drawable icon;
         String emoji;
+        int washColor;
     }
 
     private class TileAdapter extends BaseAdapter {
