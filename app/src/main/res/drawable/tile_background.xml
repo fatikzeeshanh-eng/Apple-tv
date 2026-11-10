@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Focused tile: tvOS white glow ring + lighter fill -->
+    <!-- Focused tile: tvOS bright white ring (glow look) + slight lift -->
     <item android:state_focused="true">
         <shape android:shape="rectangle">
-            <solid android:color="#4A4A50" />
-            <stroke android:width="3dp" android:color="#FFFFFF" />
-            <corners android:radius="16dp" />
+            <solid android:color="#3A3A40" />
+            <stroke android:width="4dp" android:color="#FFFFFF" />
+            <corners android:radius="32dp" />
         </shape>
     </item>
-    <!-- Resting tile: tvOS dark tile -->
+    <!-- Resting tile: tvOS home screen icon — thin white border around a dark squircle -->
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#1C1C1E" />
-            <stroke android:width="1dp" android:color="#2C2C30" />
-            <corners android:radius="16dp" />
+            <stroke android:width="1dp" android:color="#9EFFFFFF" />
+            <corners android:radius="32dp" />
         </shape>
     </item>
 </selector>
